@@ -142,6 +142,10 @@ python3 turing_weather_clock.py --snapshot
 
 表示例は上の画像 [`turing_weather_clock_snapshot.png`](/Users/shirose/Library/CloudStorage/Dropbox/turing-smart-screen-python/turing_weather_clock_snapshot.png) を参照してください。
 
+### 謝辞
+
+このスクリプトの作成と調整には Claude と Codex の支援を利用しました。
+
 ---
 
 ## English
@@ -283,3 +287,7 @@ If a required key is missing or the API response is invalid, the script stops wi
 ### Display Example
 
 See the image above: [`turing_weather_clock_snapshot.png`](/Users/shirose/Library/CloudStorage/Dropbox/turing-smart-screen-python/turing_weather_clock_snapshot.png)
+
+### Acknowledgements
+
+This script was created and refined with assistance from Claude and Codex.
