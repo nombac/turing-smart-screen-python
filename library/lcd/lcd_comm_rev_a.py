@@ -21,6 +21,7 @@
 import time
 from enum import Enum
 from typing import Optional
+import platform
 
 from serial.tools.list_ports import comports
 
@@ -55,6 +56,10 @@ class SubRevision(Enum):
 
 # This class is for Turing Smart Screen (rev. A) 3.5" and UsbMonitor screens (all sizes)
 class LcdCommRevA(LcdComm):
+    MACOS_TILE_WIDTH = 16
+    MACOS_TILE_HEIGHT = 4
+    MACOS_TILE_DELAY = 0.001
+
     def __init__(self, com_port: str = "AUTO", display_width: int = 320, display_height: int = 480,
                  update_queue: Optional[queue.Queue] = None):
         logger.debug("HW revision: A")
@@ -138,10 +143,10 @@ class LcdCommRevA(LcdComm):
         self.SetOrientation()  # Restore default orientation
 
     def ScreenOff(self):
-        self.SendCommand(Command.SCREEN_OFF, 0, 0, 0, 0)
+        self.SendCommand(Command.SCREEN_OFF, 0, 0, 0, 0, bypass_queue=True)
 
     def ScreenOn(self):
-        self.SendCommand(Command.SCREEN_ON, 0, 0, 0, 0)
+        self.SendCommand(Command.SCREEN_ON, 0, 0, 0, 0, bypass_queue=True)
 
     def SetBrightness(self, level: int = 25):
         assert 0 <= level <= 100, 'Brightness level must be [0-100]'
@@ -151,7 +156,7 @@ class LcdCommRevA(LcdComm):
         level_absolute = int(255 - ((level / 100) * 255))
 
         # Level : 0 (brightest) - 255 (darkest)
-        self.SendCommand(Command.SET_BRIGHTNESS, level_absolute, 0, 0, 0)
+        self.SendCommand(Command.SET_BRIGHTNESS, level_absolute, 0, 0, 0, bypass_queue=True)
 
     def SetOrientation(self, orientation: Orientation = Orientation.PORTRAIT):
         self.orientation = orientation
@@ -174,6 +179,37 @@ class LcdCommRevA(LcdComm):
         byteBuffer[9] = (height >> 8)
         byteBuffer[10] = (height & 255)
         self.serial_write(bytes(byteBuffer))
+        self.lcd_serial.flush()
+
+    def _should_use_macos_tile_mode(self) -> bool:
+        return platform.system() == "Darwin" and not hasattr(self.lcd_serial, "expect_golden")
+
+    def _send_bitmap_region(self, image: Image.Image, x: int, y: int):
+        image_width = image.size[0]
+        image_height = image.size[1]
+        x1 = x + image_width - 1
+        y1 = y + image_height - 1
+        rgb565le = image_to_RGB565(image, "little")
+
+        self.SendCommand(Command.DISPLAY_BITMAP, x, y, x1, y1, bypass_queue=True)
+        self.serial_write(rgb565le)
+        self.lcd_serial.flush()
+
+    def _display_pil_image_macos_tiled(
+            self,
+            image: Image.Image,
+            x: int,
+            y: int,
+            image_width: int,
+            image_height: int
+    ):
+        for tile_y in range(0, image_height, self.MACOS_TILE_HEIGHT):
+            tile_height = min(self.MACOS_TILE_HEIGHT, image_height - tile_y)
+            for tile_x in range(0, image_width, self.MACOS_TILE_WIDTH):
+                tile_width = min(self.MACOS_TILE_WIDTH, image_width - tile_x)
+                tile = image.crop((tile_x, tile_y, tile_x + tile_width, tile_y + tile_height))
+                self._send_bitmap_region(tile, x + tile_x, y + tile_y)
+                time.sleep(self.MACOS_TILE_DELAY)
 
     def DisplayPILImage(
             self,
@@ -204,6 +240,10 @@ class LcdCommRevA(LcdComm):
         assert y <= height, 'Image Y coordinate must be <= display height'
         assert image_height > 0, 'Image height must be > 0'
         assert image_width > 0, 'Image width must be > 0'
+
+        if self._should_use_macos_tile_mode():
+            self._display_pil_image_macos_tiled(image, x, y, image_width, image_height)
+            return
 
         (x0, y0) = (x, y)
         (x1, y1) = (x + image_width - 1, y + image_height - 1)

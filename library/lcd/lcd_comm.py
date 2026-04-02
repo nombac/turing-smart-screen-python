@@ -134,6 +134,8 @@ class LcdComm(ABC):
 
     def WriteData(self, byteBuffer: bytearray):
         self.WriteLine(bytes(byteBuffer))
+        if self.lcd_serial:
+            self.lcd_serial.flush()
 
     def SendLine(self, line: bytes):
         if self.update_queue:
@@ -146,10 +148,6 @@ class LcdComm(ABC):
     def WriteLine(self, line: bytes):
         try:
             self.serial_write(line)
-            if platform.system() == "Darwin":
-                # macOS needs the serial buffer to be flushed regularly to avoid bitmap corruption on the display
-                # See https://github.com/mathoudebine/turing-smart-screen-python/issues/7
-                self.lcd_serial.flush()
         except serial.SerialTimeoutException:
             # We timed-out trying to write to our device, slow things down.
             logger.warning("(Write line) Too fast! Slow down!")

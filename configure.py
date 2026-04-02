@@ -484,7 +484,7 @@ class TuringConfigWindow:
 
     def on_saverun_click(self):
         self.save_config_values()
-        subprocess.Popen(f'"{MAIN_DIRECTORY}{glob.glob("main.*", root_dir=MAIN_DIRECTORY)[0]}"', shell=True)
+        subprocess.Popen([sys.executable, f'{MAIN_DIRECTORY}{glob.glob("main.*", root_dir=MAIN_DIRECTORY)[0]}'])
         self.window.destroy()
 
     def on_brightness_change(self, e=None):
