@@ -11,14 +11,19 @@ from PIL import Image, ImageDraw, ImageFont
 from library.lcd.lcd_comm import Orientation
 from library.lcd.lcd_comm_rev_a import LcdCommRevA
 
-# === API Settings ===
-# 時刻フォント候補:
+
+# === Font Settings ===
 # - "/System/Library/Fonts/Helvetica.ttc"
 # - "/System/Library/Fonts/Avenir Next.ttc"
 # - "/System/Library/Fonts/Supplemental/Arial Unicode.ttf"
 # - "/System/Library/Fonts/Helvetica.ttc"
 FONT_PATH_TIME = "/System/Library/Fonts/Avenir Next.ttc"
 FONT_PATH_JA = "/System/Library/Fonts/ヒラギノ角ゴシック W3.ttc"
+
+# === Display Settings ===
+BRIGHTNESS = 25
+
+# === Weather Box Layout ===
 # 天気APIの切替: "weatherapi" または "openweather"
 # - weatherapi を使う場合は WEATHERAPI_KEY
 # - openweather を使う場合は OPENWEATHER_API_KEY
@@ -30,44 +35,41 @@ WEATHERAPI_LOCATION = "Yokohama"
 # - "en": 基本英語
 # - "ja": weatherapi で日本語指定のときのみ日本語
 WEATHER_TEXT_LANG = "ja"
-# 日付表示の言語:
-# - "ja": 2026年4月1日（水）
-# - "en": Wed, Apr 1, 2026
-DATE_LANG = "ja"
-
-# === Display Settings ===
-BRIGHTNESS = 15
-FONT_SIZE_TIME = 88
 FONT_SIZE_WEATHER = 30
 WEATHER_UPDATE_MIN = 5
-UPDATE_INTERVAL_SEC = 0.5
-
-# === Layout Settings ===
-# - WEATHER_TOP_Y: 上の天気ボックス
-# - TIME_X, TIME_Y: 中央の時刻ボックス
-# - WEATHER_Y: 下の日付ボックス
 WEATHER_X = 20
-WEATHER_TOP_Y = 5
-WEATHER_Y = 215
-TIME_X = 20
-TIME_Y = 130
-
+WEATHER_Y = 5
 WEATHER_BOX_WIDTH = 430
 WEATHER_BOX_HEIGHT = 125
 WEATHER_LINE2_Y = 42
 WEATHER_LINE3_Y = 84
-TIME_BOX_WIDTH = 430
 WEATHER_ICON_SIZE = 110
 WEATHER_ICON_X = 340
 WEATHER_ICON_Y = 5
-
-# === Color Settings ===
-# - COLOR_TIME: 中央の時刻
-# - COLOR_WEATHER: 上の気温/天気文言/風向風速
-# - COLOR_DATE: 下の日付
-COLOR_TIME = (0, 255, 128)
-COLOR_DATE = (180, 220, 255)
 COLOR_WEATHER = (255, 195, 40)
+
+# === Time Box Layout ===
+FONT_SIZE_TIME = 88
+UPDATE_INTERVAL_SEC = 0.5
+TIME_X = 20
+TIME_Y = 140
+TIME_BOX_WIDTH = 430
+TIME_BOX_HEIGHT = FONT_SIZE_TIME + 20
+COLOR_TIME = (0, 255, 128)
+
+# === Date Box Layout ===
+# 日付表示の言語:
+# - "ja": 2026年4月1日（水）
+# - "en": Wed, Apr 1, 2026
+DATE_LANG = "ja"
+FONT_SIZE_DATE = 40
+DATE_X = 20
+DATE_Y = 230
+DATE_BOX_WIDTH = 430
+DATE_BOX_HEIGHT = 80
+DATE_LINE_Y = 42
+COLOR_DATE = (180, 220, 255)
+
 
 WEEKDAY_SHORT_JA = ["月", "火", "水", "木", "金", "土", "日"]
 WEEKDAY_SHORT_EN = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
@@ -282,15 +284,22 @@ def build_weather_box(font_weather, temp, line2_text, line3_text="", line2_color
     return box
 
 
+def build_date_box(font_date, date_text):
+    box = build_box(DATE_BOX_WIDTH, DATE_BOX_HEIGHT)
+    draw = ImageDraw.Draw(box)
+    draw.text((0, DATE_LINE_Y), date_text, font=font_date, fill=dim(COLOR_DATE))
+    return box
+
+
 def build_time_box(font_large):
-    box = build_box(TIME_BOX_WIDTH, FONT_SIZE_TIME + 20)
+    box = build_box(TIME_BOX_WIDTH, TIME_BOX_HEIGHT)
     draw = ImageDraw.Draw(box)
     t = time.strftime("%H:%M:%S")
     draw.text((0, 0), t, font=font_large, fill=dim(COLOR_TIME))
     return box
 
 
-def build_display_boxes(font_weather, font_large, weather, now):
+def build_display_boxes(font_weather, font_date, font_large, weather, now):
     weather_icon = fetch_weather_icon(weather["icon_url"])
     top_box = build_weather_box(
         font_weather,
@@ -299,19 +308,19 @@ def build_display_boxes(font_weather, font_large, weather, now):
         weather["wind_text"],
         icon_image=weather_icon,
     )
-    bottom_box = build_weather_box(font_weather, "", format_date_text(now), line2_color=COLOR_DATE)
+    bottom_box = build_date_box(font_date, format_date_text(now))
     time_box = build_time_box(font_large)
     return top_box, time_box, bottom_box
 
 
-def save_snapshot(font_weather, font_large, weather, now):
+def save_snapshot(font_weather, font_date, font_large, weather, now):
     width = 480
     height = 320
     canvas = build_canvas(width, height)
-    top_box, time_box, bottom_box = build_display_boxes(font_weather, font_large, weather, now)
-    canvas.paste(top_box, (WEATHER_X, WEATHER_TOP_Y))
+    top_box, time_box, bottom_box = build_display_boxes(font_weather, font_date, font_large, weather, now)
+    canvas.paste(top_box, (WEATHER_X, WEATHER_Y))
     canvas.paste(time_box, (TIME_X, TIME_Y))
-    canvas.paste(bottom_box, (WEATHER_X, WEATHER_Y))
+    canvas.paste(bottom_box, (DATE_X, DATE_Y))
     output_path = "turing_weather_clock_snapshot.png"
     canvas.save(output_path)
     print(f"Saved snapshot to {output_path}")
@@ -324,11 +333,12 @@ def main():
 
     font_large = ImageFont.truetype(FONT_PATH_TIME, FONT_SIZE_TIME)
     font_weather = ImageFont.truetype(FONT_PATH_JA, FONT_SIZE_WEATHER)
+    font_date = ImageFont.truetype(FONT_PATH_JA, FONT_SIZE_DATE)
     weather = get_weather()
     now = time.localtime()
 
     if args.snapshot:
-        save_snapshot(font_weather, font_large, weather, now)
+        save_snapshot(font_weather, font_date, font_large, weather, now)
         return
 
     lcd = LcdCommRevA()
@@ -343,10 +353,10 @@ def main():
 
     print("Initial draw...")
     lcd.DisplayPILImage(build_canvas(width, height))
-    top_box, time_box, bottom_box = build_display_boxes(font_weather, font_large, weather, now)
-    lcd.DisplayPILImage(top_box, x=WEATHER_X, y=WEATHER_TOP_Y)
+    top_box, time_box, bottom_box = build_display_boxes(font_weather, font_date, font_large, weather, now)
+    lcd.DisplayPILImage(top_box, x=WEATHER_X, y=WEATHER_Y)
     lcd.DisplayPILImage(time_box, x=TIME_X, y=TIME_Y)
-    lcd.DisplayPILImage(bottom_box, x=WEATHER_X, y=WEATHER_Y)
+    lcd.DisplayPILImage(bottom_box, x=DATE_X, y=DATE_Y)
 
     print("Weather + Wind + Time + Date (Ctrl+C to stop)...")
     last_weather = time.time()
@@ -356,15 +366,15 @@ def main():
             if time.time() - last_weather > WEATHER_UPDATE_MIN * 60:
                 now = time.localtime()
                 weather = get_weather()
-                top_box, _, bottom_box = build_display_boxes(font_weather, font_large, weather, now)
-                lcd.DisplayPILImage(top_box, x=WEATHER_X, y=WEATHER_TOP_Y)
-                lcd.DisplayPILImage(bottom_box, x=WEATHER_X, y=WEATHER_Y)
+                top_box, _, bottom_box = build_display_boxes(font_weather, font_date, font_large, weather, now)
+                lcd.DisplayPILImage(top_box, x=WEATHER_X, y=WEATHER_Y)
+                lcd.DisplayPILImage(bottom_box, x=DATE_X, y=DATE_Y)
                 last_weather = time.time()
 
             now = time.localtime()
             if now.tm_yday != last_day:
-                _, _, bottom_box = build_display_boxes(font_weather, font_large, weather, now)
-                lcd.DisplayPILImage(bottom_box, x=WEATHER_X, y=WEATHER_Y)
+                _, _, bottom_box = build_display_boxes(font_weather, font_date, font_large, weather, now)
+                lcd.DisplayPILImage(bottom_box, x=DATE_X, y=DATE_Y)
                 last_day = now.tm_yday
 
             lcd.DisplayPILImage(build_time_box(font_large), x=TIME_X, y=TIME_Y)
