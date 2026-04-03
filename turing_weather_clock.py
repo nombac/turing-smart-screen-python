@@ -157,6 +157,7 @@ def fetch_weatherapi_current():
     try:
         temp_c = current_data["current"]["temp_c"]
         humidity = current_data["current"]["humidity"]
+        precip_mm = current_data["current"]["precip_mm"]
         condition_text = current_data["current"]["condition"]["text"]
         icon_path = current_data["current"]["condition"]["icon"]
         wind_kph = current_data["current"]["wind_kph"]
@@ -170,6 +171,7 @@ def fetch_weatherapi_current():
     return {
         "temp_c": temp_c,
         "humidity": humidity,
+        "precip_mm": precip_mm,
         "max_temp_c": max_temp_c,
         "min_temp_c": min_temp_c,
         "condition_text": condition_text,
@@ -207,6 +209,7 @@ def fetch_openweather_current():
     return {
         "temp_c": temp_c,
         "humidity": humidity,
+        "precip_mm": None,
         "max_temp_c": None,
         "min_temp_c": None,
         "condition_text": condition_text,
@@ -216,13 +219,18 @@ def fetch_openweather_current():
     }
 
 
-def resolve_condition_text(provider, condition_text):
+def resolve_condition_text(provider, condition_text, precip_mm):
     if provider == "weatherapi" and WEATHER_TEXT_LANG == "ja":
-        return condition_text
+        return f"{condition_text} {precip_mm:g}mm/h"
     cond_ja = WEATHER_JA.get(condition_text)
     if WEATHER_TEXT_LANG == "ja" and cond_ja:
-        return " ".join(cond_ja)
-    return condition_text
+        base_text = " ".join(cond_ja)
+    else:
+        base_text = condition_text
+
+    if precip_mm is None:
+        return base_text
+    return f"{base_text} {precip_mm:g}mm/h"
 
 
 def resolve_temp_text(temp_c, max_temp_c, min_temp_c):
@@ -248,7 +256,11 @@ def get_weather():
 
     return {
         "temp_text": resolve_temp_text(current["temp_c"], current["max_temp_c"], current["min_temp_c"]),
-        "condition_text": resolve_condition_text(WEATHER_PROVIDER, current["condition_text"]),
+        "condition_text": resolve_condition_text(
+            WEATHER_PROVIDER,
+            current["condition_text"],
+            current["precip_mm"],
+        ),
         "wind_text": resolve_wind_text(current["wind_kph"], current["wind_dir"], current["humidity"]),
         "icon_url": current["icon_url"],
     }
@@ -271,7 +283,15 @@ def build_box(width, height):
     return Image.new("RGB", (width, height), (0, 0, 0))
 
 
-def build_weather_box(font_weather, temp, line2_text, line3_text="", line2_color=None, line3_color=None, icon_image=None):
+def build_weather_box(
+    font_weather,
+    temp,
+    line2_text,
+    line3_text="",
+    line2_color=None,
+    line3_color=None,
+    icon_image=None,
+):
     box = build_box(WEATHER_BOX_WIDTH, WEATHER_BOX_HEIGHT)
     draw = ImageDraw.Draw(box)
     draw.text((0, 0), temp, font=font_weather, fill=dim(COLOR_WEATHER))

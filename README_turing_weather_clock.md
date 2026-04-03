@@ -5,7 +5,7 @@
 ## 日本語
 
 `turing_weather_clock.py` は、Turing Smart Screen 向けの時計・天気表示スクリプトです。  
-上段に現在気温と予想最高/最低気温、天気文言、風向風速と湿度、中段に時刻、下段に日付を表示します。
+上段に現在気温と予想最高/最低気温、降水量付きの天気文言、風向風速と湿度、中段に時刻、下段に日付を表示します。
 
 現在のパラメタ値は、3.5 インチのディスプレイ向けに調整されています。
 
@@ -117,7 +117,7 @@ python3 turing_weather_clock.py --snapshot
   上段天気ボックス内でのアイコンの Y 位置です。
   現在値: `5`
 - `COLOR_WEATHER`
-  上段の気温・最高/最低気温・天気文言・風向風速・湿度の文字色です。
+  上段の気温・最高/最低気温・降水量付き天気文言・風向風速・湿度の文字色です。
   現在値: `(255, 195, 40)`
 
 #### Time Box Layout
@@ -185,8 +185,10 @@ python3 turing_weather_clock.py --snapshot
 
 - WeatherAPI 使用時:
   `current.json` に加えて `forecast.json` も参照し、上段1行目に当日の `H/L` を表示します。
+  また、上段2行目の天気文言の後ろに現在降水量を `0mm/h` の形式で表示します。
 - OpenWeather 使用時:
   予想最高/最低気温は取得せず、上段1行目は `(H:--, L:--)` 表示になります。
+  現在降水量の付加表示も行いません。
 - 上段3行目の湿度表示は、日本語なら `47%`、英語でも `47%` で表示し、`Humidity` などのラベルは付けません。
 - macOS + Rev.A 環境では、フォントサイズや文字色を変えると通信が不安定になることがあります。
   具体的には、表示直後や更新時に `Device not configured` などで停止する場合があります。
@@ -205,7 +207,7 @@ python3 turing_weather_clock.py --snapshot
 ## English
 
 `turing_weather_clock.py` is a clock and weather display script for Turing Smart Screen.  
-It shows current temperature with daily high/low, weather text, wind with humidity on the top area, time in the middle, and date at the bottom.
+It shows current temperature with daily high/low, weather text with precipitation, wind with humidity on the top area, time in the middle, and date at the bottom.
 
 The current parameter values are tuned for a 3.5-inch display.
 
