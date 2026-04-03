@@ -11,7 +11,7 @@
 
 動作確認環境:
 - macOS arm64, Tahoe 26.4
-- macOS Apple Silicon, Tahoe 26.4
+- macOS intel, Tahoe 26.4
 
 ### 実行方法
 
@@ -211,7 +211,7 @@ The current parameter values are tuned for a 3.5-inch display.
 
 Verified environments:
 - macOS arm64, Tahoe 26.4
-- macOS Apple Silicon, Tahoe 26.4
+- macOS intel, Tahoe 26.4
 
 ### How To Run
 
