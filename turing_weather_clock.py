@@ -333,14 +333,19 @@ def build_display_boxes(font_weather, font_date, font_large, weather, now):
     return top_box, time_box, bottom_box
 
 
-def save_snapshot(font_weather, font_date, font_large, weather, now):
-    width = 480
-    height = 320
+def compose_canvas(width, height, font_weather, font_date, font_large, weather, now):
     canvas = build_canvas(width, height)
     top_box, time_box, bottom_box = build_display_boxes(font_weather, font_date, font_large, weather, now)
     canvas.paste(top_box, (WEATHER_X, WEATHER_Y))
     canvas.paste(time_box, (TIME_X, TIME_Y))
     canvas.paste(bottom_box, (DATE_X, DATE_Y))
+    return canvas
+
+
+def save_snapshot(font_weather, font_date, font_large, weather, now, rotate_180=False):
+    canvas = compose_canvas(480, 320, font_weather, font_date, font_large, weather, now)
+    if rotate_180:
+        canvas = canvas.transpose(Image.Transpose.ROTATE_180)
     output_path = "turing_weather_clock_snapshot.png"
     canvas.save(output_path)
     print(f"Saved snapshot to {output_path}")
@@ -349,6 +354,7 @@ def save_snapshot(font_weather, font_date, font_large, weather, now):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--snapshot", action="store_true", help="Save the current display image to PNG instead of sending it to the LCD")
+    parser.add_argument("--rotate-180", action="store_true", help="Rotate the display output by 180 degrees")
     args = parser.parse_args()
 
     font_large = ImageFont.truetype(FONT_PATH_TIME, FONT_SIZE_TIME)
@@ -358,7 +364,7 @@ def main():
     now = time.localtime()
 
     if args.snapshot:
-        save_snapshot(font_weather, font_date, font_large, weather, now)
+        save_snapshot(font_weather, font_date, font_large, weather, now, rotate_180=args.rotate_180)
         return
 
     lcd = LcdCommRevA()
@@ -366,7 +372,10 @@ def main():
     lcd.InitializeComm()
     lcd.ScreenOn()
     lcd.SetBrightness(BRIGHTNESS)
-    lcd.SetOrientation(Orientation.LANDSCAPE)
+    if args.rotate_180:
+        lcd.SetOrientation(Orientation.REVERSE_LANDSCAPE)
+    else:
+        lcd.SetOrientation(Orientation.LANDSCAPE)
 
     width = lcd.get_width()
     height = lcd.get_height()

@@ -41,10 +41,22 @@ export OPENWEATHER_API_KEY='YOUR_OPENWEATHER_API_KEY'
 python3 turing_weather_clock.py
 ```
 
+180 度反転して表示したい場合:
+
+```bash
+python3 turing_weather_clock.py --rotate-180
+```
+
 PNG スナップショットだけを保存したい場合:
 
 ```bash
 python3 turing_weather_clock.py --snapshot
+```
+
+反転した向きで PNG スナップショットを保存したい場合:
+
+```bash
+python3 turing_weather_clock.py --snapshot --rotate-180
 ```
 
 ### 設定パラメタ
@@ -181,6 +193,14 @@ python3 turing_weather_clock.py --snapshot
 
 キーが設定されていない場合や API 応答が壊れている場合は、明示的にエラーで停止します。
 
+### コマンドラインオプション
+
+- `--snapshot`
+  LCD に送らず、現在の表示内容を `turing_weather_clock_snapshot.png` として保存します。
+- `--rotate-180`
+  表示全体を 180 度回転します。既定値は従来どおり非回転です。
+  `--snapshot` と併用した場合は、保存される PNG も同じ向きで 180 度回転します。
+
 ### 補足
 
 - WeatherAPI 使用時:
@@ -243,10 +263,22 @@ export OPENWEATHER_API_KEY='YOUR_OPENWEATHER_API_KEY'
 python3 turing_weather_clock.py
 ```
 
+If you want the whole display rotated by 180 degrees:
+
+```bash
+python3 turing_weather_clock.py --rotate-180
+```
+
 If you want to save a PNG snapshot instead of sending to the LCD:
 
 ```bash
 python3 turing_weather_clock.py --snapshot
+```
+
+If you want a PNG snapshot with the same 180-degree rotation applied:
+
+```bash
+python3 turing_weather_clock.py --snapshot --rotate-180
 ```
 
 ### Configurable Parameters
@@ -382,6 +414,14 @@ The following parameters can be edited near the top of [`turing_weather_clock.py
   `OPENWEATHER_API_KEY` is required.
 
 If a required key is missing or the API response is invalid, the script stops with an explicit error.
+
+### Command-Line Options
+
+- `--snapshot`
+  Saves the current display as `turing_weather_clock_snapshot.png` instead of sending it to the LCD.
+- `--rotate-180`
+  Rotates the entire output by 180 degrees. The default remains the original non-rotated orientation.
+  When combined with `--snapshot`, the saved PNG is rotated the same way.
 
 ### Notes
 
