@@ -7,6 +7,8 @@
 `turing_weather_clock.py` は、Turing Smart Screen 向けの時計・天気表示スクリプトです。  
 上段に現在気温と予想最高/最低気温、天気文言、風向風速と湿度、中段に時刻、下段に日付を表示します。
 
+現在のパラメタ値は、3.5 インチのディスプレイ向けに調整されています。
+
 ### 実行方法
 
 1. 必要な Python パッケージを入れます。
@@ -152,6 +154,8 @@ python3 turing_weather_clock.py --snapshot
 
 `turing_weather_clock.py` is a clock and weather display script for Turing Smart Screen.  
 It shows current temperature with daily high/low, weather text, wind with humidity on the top area, time in the middle, and date at the bottom.
+
+The current parameter values are tuned for a 3.5-inch display.
 
 ### How To Run
 

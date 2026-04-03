@@ -1,5 +1,13 @@
 # ![Icon](https://raw.githubusercontent.com/mathoudebine/turing-smart-screen-python/main/res/icons/monitor-icon-17865/24.png) turing-smart-screen-python
 
+## Note For This Fork
+
+This fork includes macOS Rev.A display fixes and a custom weather clock example.
+
+See [README_turing_weather_clock.md](./README_turing_weather_clock.md) for details.
+
+![Turing Weather Clock](./turing_weather_clock_snapshot.png)
+
 ### ⚠️ DISCLAIMER - PLEASE READ ⚠️
 
 This project is **not affiliated, associated, authorized, endorsed by, or in any way officially connected with Turing / XuanFang / Kipye brands**, or any of theirs subsidiaries, affiliates, manufacturers or sellers of their products. All product and company names are the registered trademarks of their original owners.
