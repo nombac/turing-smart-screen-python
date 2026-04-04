@@ -2,11 +2,14 @@
 
 ## Note For This Fork
 
-This fork includes macOS Rev.A display fixes and a custom weather clock example.
+This fork includes macOS Rev.A display fixes, a custom weather clock example, and a custom quadrant-based system monitor example.
 
-See [README_turing_weather_clock.md](./README_turing_weather_clock.md) for details.
+See [README_turing_weather_clock.md](./README_turing_weather_clock.md) and [README_turing_system_monitor.md](./README_turing_system_monitor.md) for details.
 
-![Turing Weather Clock](./turing_weather_clock_snapshot.png)
+<p>
+  <img src="./turing_weather_clock_snapshot.png" alt="Turing Weather Clock" width="48%" />
+  <img src="./turing_system_monitor_snapshot.png" alt="Turing System Monitor" width="48%" />
+</p>
 
 ### ⚠️ DISCLAIMER - PLEASE READ ⚠️
 

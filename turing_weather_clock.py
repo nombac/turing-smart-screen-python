@@ -370,10 +370,8 @@ def compose_canvas(width, height, font_weather, font_date, font_large, weather, 
     return canvas
 
 
-def save_snapshot(font_weather, font_date, font_large, weather, now, rotate_180=False):
+def save_snapshot(font_weather, font_date, font_large, weather, now):
     canvas = compose_canvas(480, 320, font_weather, font_date, font_large, weather, now)
-    if rotate_180:
-        canvas = canvas.transpose(Image.Transpose.ROTATE_180)
     output_path = "turing_weather_clock_snapshot.png"
     canvas.save(output_path)
     print(f"Saved snapshot to {output_path}")
@@ -384,7 +382,7 @@ def main():
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--snapshot", action="store_true", help="Save the current display image to PNG instead of sending it to the LCD")
-    parser.add_argument("--rotate-180", action="store_true", help="Rotate the display output by 180 degrees")
+    parser.add_argument("--landscape", action="store_true", help="Use normal landscape orientation instead of the default 180-degree rotated orientation")
     parser.add_argument("--exclude-weather", action="store_true", help="Hide the weather block and run as a clock without weather API access")
     parser.add_argument("--weather-provider", choices=["weatherapi", "openweather"], default=WEATHER_PROVIDER,
                         help="Select the weather API provider")
@@ -410,13 +408,11 @@ def main():
             canvas = build_canvas(480, 320)
             canvas.paste(build_time_box(font_large), (TIME_X, TIME_Y))
             canvas.paste(build_date_box(font_date, format_date_text(now)), (DATE_X, DATE_Y))
-            if args.rotate_180:
-                canvas = canvas.transpose(Image.Transpose.ROTATE_180)
             output_path = "turing_weather_clock_snapshot.png"
             canvas.save(output_path)
             print(f"Saved snapshot to {output_path}")
         else:
-            save_snapshot((font_source, font_weather), font_date, font_large, weather, now, rotate_180=args.rotate_180)
+            save_snapshot((font_source, font_weather), font_date, font_large, weather, now)
         return
 
     lcd = LcdCommRevA()
@@ -424,10 +420,10 @@ def main():
     lcd.InitializeComm()
     lcd.ScreenOn()
     lcd.SetBrightness(BRIGHTNESS)
-    if args.rotate_180:
-        lcd.SetOrientation(Orientation.REVERSE_LANDSCAPE)
-    else:
+    if args.landscape:
         lcd.SetOrientation(Orientation.LANDSCAPE)
+    else:
+        lcd.SetOrientation(Orientation.REVERSE_LANDSCAPE)
 
     width = lcd.get_width()
     height = lcd.get_height()
