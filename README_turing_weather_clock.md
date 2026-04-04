@@ -5,7 +5,7 @@
 ## 日本語
 
 `turing_weather_clock.py` は、Turing Smart Screen 向けの時計・天気表示スクリプトです。  
-上段に現在気温と予想最高/最低気温、降水量付きの天気文言、風向風速と湿度、中段に時刻、下段に日付を表示します。
+上段に天気取得ソース、小さい天気アイコン、気温、風向風速と湿度、天気文言、降水量、中段に時刻、下段に日付を表示します。
 
 現在のパラメタ値は、3.5 インチのディスプレイ向けに調整されています。
 
@@ -59,6 +59,12 @@ python3 turing_weather_clock.py --snapshot
 python3 turing_weather_clock.py --snapshot --rotate-180
 ```
 
+天気 API を使わず、時計と日付だけ表示したい場合:
+
+```bash
+python3 turing_weather_clock.py --exclude-weather
+```
+
 ### 設定パラメタ
 
 以下は [`turing_weather_clock.py`](/Users/shirose/Library/CloudStorage/Dropbox/turing-smart-screen-python/turing_weather_clock.py) の先頭で変更できます。現在値もあわせて示します。
@@ -72,6 +78,9 @@ python3 turing_weather_clock.py --snapshot --rotate-180
 - `FONT_PATH_JA`
   天気文言と日付表示用フォントのパスです。
   現在値: `"/System/Library/Fonts/ヒラギノ角ゴシック W3.ttc"`
+- `FONT_PATH_SOURCE`
+  天気取得ソース表示用フォントのパスです。
+  現在値: `"/System/Library/Fonts/Avenir Next.ttc"`
 
 #### Display Settings
 
@@ -84,20 +93,22 @@ python3 turing_weather_clock.py --snapshot --rotate-180
 - `WEATHER_PROVIDER`
   使用する天気 API を切り替えます。
   `weatherapi` または `openweather` を指定します。
-  現在値: `"weatherapi"`
+  現在値: `"openweather"`
 - `WEATHERAPI_LOCATION`
   天気取得対象の場所です。
   例: `"Tokyo"`, `"Yokohama"`
   現在値: `"Yokohama"`
 - `WEATHER_TEXT_LANG`
-  天気文言と風向の表示言語です。
+  天気文言の表示言語です。
   `en` または `ja` を指定します。
-  `weatherapi` で `ja` を指定した場合は、API から日本語文言を直接受け取ります。
-  `openweather` で `ja` を指定した場合は、内蔵辞書で変換できる文言のみ日本語になります。
+  `weatherapi` / `openweather` ともに、API の言語指定を `ja` / `en` で切り替えます。
   現在値: `"ja"`
 - `FONT_SIZE_WEATHER`
   上段の天気情報フォントサイズです。
-  現在値: `30`
+  現在値: `24`
+- `FONT_SIZE_SOURCE`
+  上段最上部の天気取得ソース名フォントサイズです。
+  現在値: `14`
 - `WEATHER_UPDATE_MIN`
   天気 API の再取得間隔です。単位は分です。
   現在値: `5`
@@ -106,31 +117,46 @@ python3 turing_weather_clock.py --snapshot --rotate-180
   現在値: `20`
 - `WEATHER_Y`
   上段天気ボックスの上端位置です。
-  現在値: `5`
+  現在値: `12`
 - `WEATHER_BOX_WIDTH`
   上段天気ボックスの幅です。
   現在値: `430`
 - `WEATHER_BOX_HEIGHT`
   上段天気ボックスの高さです。
   現在値: `125`
+- `WEATHER_TEXT_WIDTH`
+  アイコンを除くテキスト描画領域の幅です。
+  現在値: `330`
+- `WEATHER_SOURCE_Y`
+  天気取得ソース名の Y オフセットです。
+  現在値: `-2`
+- `WEATHER_TEMP_Y`
+  気温行の Y オフセットです。
+  現在値: `18`
 - `WEATHER_LINE2_Y`
   上段天気ボックス2行目の Y オフセットです。
-  現在値: `42`
+  現在値: `44`
 - `WEATHER_LINE3_Y`
   上段天気ボックス3行目の Y オフセットです。
-  現在値: `84`
+  現在値: `70`
+- `WEATHER_LINE4_Y`
+  上段天気ボックス4行目の Y オフセットです。
+  現在値: `96`
 - `WEATHER_ICON_SIZE`
   天気アイコンの表示サイズです。
-  現在値: `110`
+  現在値: `100`
 - `WEATHER_ICON_X`
   上段天気ボックス内でのアイコンの X 位置です。
   現在値: `340`
 - `WEATHER_ICON_Y`
   上段天気ボックス内でのアイコンの Y 位置です。
-  現在値: `5`
+  現在値: `10`
 - `COLOR_WEATHER`
-  上段の気温・最高/最低気温・降水量付き天気文言・風向風速・湿度の文字色です。
+  上段の気温・風向風速・湿度・天気文言・降水量の文字色です。
   現在値: `(255, 195, 40)`
+- `COLOR_SOURCE`
+  上段最上部の天気取得ソース名の文字色です。
+  現在値: `(120, 120, 120)`
 
 #### Time Box Layout
 
@@ -200,16 +226,20 @@ python3 turing_weather_clock.py --snapshot --rotate-180
 - `--rotate-180`
   表示全体を 180 度回転します。既定値は従来どおり非回転です。
   `--snapshot` と併用した場合は、保存される PNG も同じ向きで 180 度回転します。
+- `--exclude-weather`
+  天気ブロックを描画せず、時刻と日付だけを表示します。
+  このモードでは天気 API を呼ばないため、API キーなしで使えます。
 
 ### 補足
 
 - WeatherAPI 使用時:
-  `current.json` に加えて `forecast.json` も参照し、上段1行目に当日の `H/L` を表示します。
-  また、上段2行目の天気文言の後ろに現在降水量を `0mm/h` の形式で表示します。
+  `current.json` に加えて `forecast.json` も参照し、気温行に当日の `H/L` を表示します。
 - OpenWeather 使用時:
-  予想最高/最低気温は取得せず、上段1行目は `(H:--, L:--)` 表示になります。
-  現在降水量の付加表示も行いません。
-- 上段3行目の湿度表示は、日本語なら `47%`、英語でも `47%` で表示し、`Humidity` などのラベルは付けません。
+  予想最高/最低気温は取得しないため、気温行は現在気温のみ表示します。
+  降水量は `rain["1h"]` と `snow["1h"]` を合算して表示します。
+- 風向きは日本語時のみ自前辞書で日本語方位に変換します。英語時は API の方位記号をそのまま使います。
+- 上段天気ブロックの表示順は `気温 -> 風・湿度 -> 文言 -> 降水量` です。
+- 天気テキストはアイコンと重ならないよう、左側の専用描画領域に制限しています。
 - macOS + Rev.A 環境では、フォントサイズや文字色を変えると通信が不安定になることがあります。
   具体的には、表示直後や更新時に `Device not configured` などで停止する場合があります。
   特にフォントを小さくしすぎる、または色を強く変える変更は、実機で都度確認してください。
@@ -227,7 +257,7 @@ python3 turing_weather_clock.py --snapshot --rotate-180
 ## English
 
 `turing_weather_clock.py` is a clock and weather display script for Turing Smart Screen.  
-It shows current temperature with daily high/low, weather text with precipitation, wind with humidity on the top area, time in the middle, and date at the bottom.
+It shows the weather source label, a small weather icon, temperature, wind with humidity, weather text, precipitation on the top area, time in the middle, and date at the bottom.
 
 The current parameter values are tuned for a 3.5-inch display.
 
@@ -281,6 +311,12 @@ If you want a PNG snapshot with the same 180-degree rotation applied:
 python3 turing_weather_clock.py --snapshot --rotate-180
 ```
 
+If you want to use it as a clock without any weather API access:
+
+```bash
+python3 turing_weather_clock.py --exclude-weather
+```
+
 ### Configurable Parameters
 
 The following parameters can be edited near the top of [`turing_weather_clock.py`](/Users/shirose/Library/CloudStorage/Dropbox/turing-smart-screen-python/turing_weather_clock.py). Current values are also shown.
@@ -293,6 +329,9 @@ The following parameters can be edited near the top of [`turing_weather_clock.py
 - `FONT_PATH_JA`
   Font path for weather text and date display.
   Current value: `"/System/Library/Fonts/ヒラギノ角ゴシック W3.ttc"`
+- `FONT_PATH_SOURCE`
+  Font path for the weather source label.
+  Current value: `"/System/Library/Fonts/Avenir Next.ttc"`
 
 #### Display Settings
 
@@ -305,20 +344,22 @@ The following parameters can be edited near the top of [`turing_weather_clock.py
 - `WEATHER_PROVIDER`
   Selects the weather API provider.
   Supported values: `weatherapi`, `openweather`
-  Current value: `"weatherapi"`
+  Current value: `"openweather"`
 - `WEATHERAPI_LOCATION`
   Location used for weather lookup.
   Example: `"Tokyo"`, `"Yokohama"`
   Current value: `"Yokohama"`
 - `WEATHER_TEXT_LANG`
-  Display language for weather text and wind direction.
+  Display language for weather text.
   Supported values: `en`, `ja`
-  With `weatherapi` and `ja`, the script uses Japanese text returned directly by the API.
-  With `openweather` and `ja`, only phrases covered by the built-in dictionary are translated.
+  Both `weatherapi` and `openweather` switch the API language using this setting.
   Current value: `"ja"`
 - `FONT_SIZE_WEATHER`
   Font size for the top weather area.
-  Current value: `30`
+  Current value: `24`
+- `FONT_SIZE_SOURCE`
+  Font size for the small weather source label at the very top.
+  Current value: `14`
 - `WEATHER_UPDATE_MIN`
   Weather refresh interval in minutes.
   Current value: `5`
@@ -327,31 +368,46 @@ The following parameters can be edited near the top of [`turing_weather_clock.py
   Current value: `20`
 - `WEATHER_Y`
   Top position of the top weather box.
-  Current value: `5`
+  Current value: `12`
 - `WEATHER_BOX_WIDTH`
   Width of the top weather box.
   Current value: `430`
 - `WEATHER_BOX_HEIGHT`
   Height of the top weather box.
   Current value: `125`
+- `WEATHER_TEXT_WIDTH`
+  Width of the text-only area to the left of the icon.
+  Current value: `330`
+- `WEATHER_SOURCE_Y`
+  Y offset for the source label.
+  Current value: `-2`
+- `WEATHER_TEMP_Y`
+  Y offset for the temperature line.
+  Current value: `18`
 - `WEATHER_LINE2_Y`
   Y offset for line 2 inside the top weather box.
-  Current value: `42`
+  Current value: `44`
 - `WEATHER_LINE3_Y`
   Y offset for line 3 inside the top weather box.
-  Current value: `84`
+  Current value: `70`
+- `WEATHER_LINE4_Y`
+  Y offset for line 4 inside the top weather box.
+  Current value: `96`
 - `WEATHER_ICON_SIZE`
   Rendered size of the weather icon.
-  Current value: `110`
+  Current value: `100`
 - `WEATHER_ICON_X`
   Icon X position inside the top box.
   Current value: `340`
 - `WEATHER_ICON_Y`
   Icon Y position inside the top box.
-  Current value: `5`
+  Current value: `10`
 - `COLOR_WEATHER`
-  Text color for temperature, high/low, weather text, wind, and humidity.
+  Text color for temperature, wind, weather text, and precipitation.
   Current value: `(255, 195, 40)`
+- `COLOR_SOURCE`
+  Text color for the source label.
+  Current value: `(120, 120, 120)`
 
 #### Time Box Layout
 
@@ -422,14 +478,20 @@ If a required key is missing or the API response is invalid, the script stops wi
 - `--rotate-180`
   Rotates the entire output by 180 degrees. The default remains the original non-rotated orientation.
   When combined with `--snapshot`, the saved PNG is rotated the same way.
+- `--exclude-weather`
+  Hides the weather block and only shows time and date.
+  In this mode the script does not call any weather API, so it works without API keys.
 
 ### Notes
 
 - With WeatherAPI:
-  The script uses both `current.json` and `forecast.json`, and displays daily `H/L` values on the first top line.
+  The script uses both `current.json` and `forecast.json`, and displays daily `H/L` values on the temperature line.
 - With OpenWeather:
-  Daily high/low is not fetched, so the first top line shows `(H:--, L:--)`.
-- Humidity on the third top line is shown as `47%` in both Japanese and English modes, without an extra label.
+  Daily high/low is not fetched, so only the current temperature is shown.
+  Precipitation is derived from `rain["1h"] + snow["1h"]`.
+- Wind direction is still converted with the built-in direction table in Japanese mode. In English mode the API direction code is shown as-is.
+- The top weather block order is `temperature -> wind/humidity -> condition text -> precipitation`.
+- Weather text is clipped to a dedicated text area so it does not overlap the icon.
 - On macOS + Rev.A hardware, changing font size or text color can make the display path unstable.
   In practice, the script may stop during initial draw or later updates with errors such as `Device not configured`.
   Smaller fonts and stronger color changes should always be re-verified on the actual device.
