@@ -29,13 +29,12 @@ BRIGHTNESS = 25
 # - weatherapi を使う場合は WEATHERAPI_KEY
 # - openweather を使う場合は OPENWEATHER_API_KEY
 WEATHER_PROVIDER = "weatherapi"
-#WEATHER_PROVIDER = "openweather"
 # 天気の取得場所を変える場合はここを編集する。例: "Tokyo", "Yokohama"
 WEATHERAPI_LOCATION = "Yokohama"
 # 天気文言と風向の表示言語:
 # - "en": 基本英語
 # - "ja": weatherapi で日本語指定のときのみ日本語
-WEATHER_TEXT_LANG = "ja"
+WEATHER_TEXT_LANG = "en"
 FONT_SIZE_WEATHER = 24
 FONT_SIZE_SOURCE = 14
 WEATHER_UPDATE_MIN = 5
@@ -68,13 +67,13 @@ COLOR_TIME = (0, 255, 128)
 # 日付表示の言語:
 # - "ja": 2026年4月1日（水）
 # - "en": Wed, Apr 1, 2026
-DATE_LANG = "ja"
+DATE_LANG = "en"
 FONT_SIZE_DATE = 40
 DATE_X = 20
 DATE_Y = 230
 DATE_BOX_WIDTH = 430
 DATE_BOX_HEIGHT = 80
-DATE_LINE_Y = 42
+DATE_LINE_Y = 25
 COLOR_DATE = (180, 220, 255)
 
 
@@ -152,6 +151,7 @@ def fetch_weatherapi_current():
         temp_c = current_data["current"]["temp_c"]
         humidity = current_data["current"]["humidity"]
         precip_mm = current_data["current"]["precip_mm"]
+        pressure_hpa = current_data["current"]["pressure_mb"]
         condition_text = current_data["current"]["condition"]["text"]
         icon_path = current_data["current"]["condition"]["icon"]
         wind_kph = current_data["current"]["wind_kph"]
@@ -166,6 +166,7 @@ def fetch_weatherapi_current():
         "temp_c": temp_c,
         "humidity": humidity,
         "precip_mm": precip_mm,
+        "pressure_hpa": pressure_hpa,
         "max_temp_c": max_temp_c,
         "min_temp_c": min_temp_c,
         "condition_text": condition_text,
@@ -196,6 +197,7 @@ def fetch_openweather_current():
     try:
         temp_c = data["main"]["temp"]
         humidity = data["main"]["humidity"]
+        pressure_hpa = data["main"]["pressure"]
         condition_text = data["weather"][0]["description"]
         icon_code = data["weather"][0]["icon"]
         wind_ms = data["wind"]["speed"]
@@ -211,6 +213,7 @@ def fetch_openweather_current():
         "temp_c": temp_c,
         "humidity": humidity,
         "precip_mm": precip_mm,
+        "pressure_hpa": pressure_hpa,
         "max_temp_c": None,
         "min_temp_c": None,
         "condition_text": condition_text,
@@ -244,25 +247,35 @@ def resolve_precip_text(precip_mm):
     return f"{precip_mm:g}mm/h"
 
 
-def get_weather():
-    if WEATHER_PROVIDER == "weatherapi":
+def resolve_precip_pressure_text(precip_mm, pressure_hpa):
+    if pressure_hpa is None:
+        raise RuntimeError("pressure_hpa is missing")
+    pressure_text = f"{pressure_hpa:.0f}hPa"
+    precip_text = resolve_precip_text(precip_mm)
+    if precip_text:
+        return f"{precip_text}  {pressure_text}"
+    return pressure_text
+
+
+def get_weather(weather_provider):
+    if weather_provider == "weatherapi":
         current = fetch_weatherapi_current()
-    elif WEATHER_PROVIDER == "openweather":
+    elif weather_provider == "openweather":
         current = fetch_openweather_current()
     else:
-        raise RuntimeError(f"Unsupported WEATHER_PROVIDER: {WEATHER_PROVIDER}")
+        raise RuntimeError(f"Unsupported WEATHER_PROVIDER: {weather_provider}")
 
     return {
-        "temp_text": resolve_temp_text(current["temp_c"], current["max_temp_c"], current["min_temp_c"], WEATHER_PROVIDER),
+        "temp_text": resolve_temp_text(current["temp_c"], current["max_temp_c"], current["min_temp_c"], weather_provider),
         "condition_text": resolve_condition_text(
-            WEATHER_PROVIDER,
+            weather_provider,
             current["condition_text"],
             current["precip_mm"],
         ),
-        "precip_text": resolve_precip_text(current["precip_mm"]),
+        "precip_text": resolve_precip_pressure_text(current["precip_mm"], current["pressure_hpa"]),
         "wind_text": resolve_wind_text(current["wind_kph"], current["wind_dir"], current["humidity"]),
         "icon_url": current["icon_url"],
-        "source_text": "WeatherAPI" if WEATHER_PROVIDER == "weatherapi" else "OpenWeather",
+        "source_text": "WeatherAPI" if weather_provider == "weatherapi" else "OpenWeather",
     }
 
 
@@ -367,19 +380,29 @@ def save_snapshot(font_weather, font_date, font_large, weather, now, rotate_180=
 
 
 def main():
+    global WEATHER_TEXT_LANG, DATE_LANG
+
     parser = argparse.ArgumentParser()
     parser.add_argument("--snapshot", action="store_true", help="Save the current display image to PNG instead of sending it to the LCD")
     parser.add_argument("--rotate-180", action="store_true", help="Rotate the display output by 180 degrees")
     parser.add_argument("--exclude-weather", action="store_true", help="Hide the weather block and run as a clock without weather API access")
+    parser.add_argument("--weather-provider", choices=["weatherapi", "openweather"], default=WEATHER_PROVIDER,
+                        help="Select the weather API provider")
+    parser.add_argument("--lang", choices=["ja", "en"], default="en",
+                        help="Set both weather text and date language")
     args = parser.parse_args()
+
+    WEATHER_TEXT_LANG = args.lang
+    DATE_LANG = args.lang
 
     font_large = ImageFont.truetype(FONT_PATH_TIME, FONT_SIZE_TIME)
     font_source = ImageFont.truetype(FONT_PATH_SOURCE, FONT_SIZE_SOURCE)
     font_weather = ImageFont.truetype(FONT_PATH_JA, FONT_SIZE_WEATHER)
     font_date = ImageFont.truetype(FONT_PATH_JA, FONT_SIZE_DATE)
+    weather_provider = args.weather_provider
     weather = None
     if not args.exclude_weather:
-        weather = get_weather()
+        weather = get_weather(weather_provider)
     now = time.localtime()
 
     if args.snapshot:
@@ -427,7 +450,7 @@ def main():
         while True:
             if not args.exclude_weather and time.time() - last_weather > WEATHER_UPDATE_MIN * 60:
                 now = time.localtime()
-                weather = get_weather()
+                weather = get_weather(weather_provider)
                 top_box, _, bottom_box = build_display_boxes((font_source, font_weather), font_date, font_large, weather, now)
                 lcd.DisplayPILImage(top_box, x=WEATHER_X, y=WEATHER_Y)
                 lcd.DisplayPILImage(bottom_box, x=DATE_X, y=DATE_Y)

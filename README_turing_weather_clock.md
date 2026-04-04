@@ -41,6 +41,18 @@ export OPENWEATHER_API_KEY='YOUR_OPENWEATHER_API_KEY'
 python3 turing_weather_clock.py
 ```
 
+OpenWeather を使いたい場合:
+
+```bash
+python3 turing_weather_clock.py --weather-provider openweather
+```
+
+日本語表示にしたい場合:
+
+```bash
+python3 turing_weather_clock.py --lang ja
+```
+
 180 度反転して表示したい場合:
 
 ```bash
@@ -93,7 +105,7 @@ python3 turing_weather_clock.py --exclude-weather
 - `WEATHER_PROVIDER`
   使用する天気 API を切り替えます。
   `weatherapi` または `openweather` を指定します。
-  現在値: `"openweather"`
+  現在値: `"weatherapi"`
 - `WEATHERAPI_LOCATION`
   天気取得対象の場所です。
   例: `"Tokyo"`, `"Yokohama"`
@@ -102,7 +114,7 @@ python3 turing_weather_clock.py --exclude-weather
   天気文言の表示言語です。
   `en` または `ja` を指定します。
   `weatherapi` / `openweather` ともに、API の言語指定を `ja` / `en` で切り替えます。
-  現在値: `"ja"`
+  現在値: `"en"`
 - `FONT_SIZE_WEATHER`
   上段の天気情報フォントサイズです。
   現在値: `24`
@@ -187,7 +199,7 @@ python3 turing_weather_clock.py --exclude-weather
 - `DATE_LANG`
   日付表示言語です。
   `ja` なら `2026年4月3日（金）`、`en` なら `Fri, Apr 3, 2026` 形式です。
-  現在値: `"ja"`
+  現在値: `"en"`
 - `FONT_SIZE_DATE`
   下段の日付フォントサイズです。
   現在値: `40`
@@ -226,6 +238,12 @@ python3 turing_weather_clock.py --exclude-weather
 - `--rotate-180`
   表示全体を 180 度回転します。既定値は従来どおり非回転です。
   `--snapshot` と併用した場合は、保存される PNG も同じ向きで 180 度回転します。
+- `--weather-provider`
+  天気 API を `weatherapi` または `openweather` から選択します。
+  既定値は `weatherapi` です。
+- `--lang`
+  天気文言と日付言語をまとめて `ja` / `en` で切り替えます。
+  既定値は `en` です。
 - `--exclude-weather`
   天気ブロックを描画せず、時刻と日付だけを表示します。
   このモードでは天気 API を呼ばないため、API キーなしで使えます。
@@ -238,6 +256,7 @@ python3 turing_weather_clock.py --exclude-weather
   予想最高/最低気温は取得しないため、気温行は現在気温のみ表示します。
   降水量は `rain["1h"]` と `snow["1h"]` を合算して表示します。
 - 風向きは日本語時のみ自前辞書で日本語方位に変換します。英語時は API の方位記号をそのまま使います。
+- 気圧は降水量の後ろに `1008hPa` の形式で表示します。
 - 上段天気ブロックの表示順は `気温 -> 風・湿度 -> 文言 -> 降水量` です。
 - 天気テキストはアイコンと重ならないよう、左側の専用描画領域に制限しています。
 - macOS + Rev.A 環境では、フォントサイズや文字色を変えると通信が不安定になることがあります。
@@ -293,6 +312,18 @@ export OPENWEATHER_API_KEY='YOUR_OPENWEATHER_API_KEY'
 python3 turing_weather_clock.py
 ```
 
+If you want to use OpenWeather instead:
+
+```bash
+python3 turing_weather_clock.py --weather-provider openweather
+```
+
+If you want Japanese weather text and date formatting:
+
+```bash
+python3 turing_weather_clock.py --lang ja
+```
+
 If you want the whole display rotated by 180 degrees:
 
 ```bash
@@ -344,7 +375,7 @@ The following parameters can be edited near the top of [`turing_weather_clock.py
 - `WEATHER_PROVIDER`
   Selects the weather API provider.
   Supported values: `weatherapi`, `openweather`
-  Current value: `"openweather"`
+  Current value: `"weatherapi"`
 - `WEATHERAPI_LOCATION`
   Location used for weather lookup.
   Example: `"Tokyo"`, `"Yokohama"`
@@ -353,7 +384,7 @@ The following parameters can be edited near the top of [`turing_weather_clock.py
   Display language for weather text.
   Supported values: `en`, `ja`
   Both `weatherapi` and `openweather` switch the API language using this setting.
-  Current value: `"ja"`
+  Current value: `"en"`
 - `FONT_SIZE_WEATHER`
   Font size for the top weather area.
   Current value: `24`
@@ -439,7 +470,7 @@ The following parameters can be edited near the top of [`turing_weather_clock.py
   Display language for the date.
   `ja` gives `2026年4月3日（金）`
   `en` gives `Fri, Apr 3, 2026`
-  Current value: `"ja"`
+  Current value: `"en"`
 - `FONT_SIZE_DATE`
   Font size for the bottom date area.
   Current value: `40`
@@ -478,6 +509,13 @@ If a required key is missing or the API response is invalid, the script stops wi
 - `--rotate-180`
   Rotates the entire output by 180 degrees. The default remains the original non-rotated orientation.
   When combined with `--snapshot`, the saved PNG is rotated the same way.
+- `--weather-provider`
+  Selects the weather API provider: `weatherapi` or `openweather`.
+  The default is `weatherapi`.
+- `--lang`
+  Sets both weather text language and date language at the same time.
+  Supported values: `ja`, `en`
+  The default is `en`.
 - `--exclude-weather`
   Hides the weather block and only shows time and date.
   In this mode the script does not call any weather API, so it works without API keys.
@@ -490,6 +528,7 @@ If a required key is missing or the API response is invalid, the script stops wi
   Daily high/low is not fetched, so only the current temperature is shown.
   Precipitation is derived from `rain["1h"] + snow["1h"]`.
 - Wind direction is still converted with the built-in direction table in Japanese mode. In English mode the API direction code is shown as-is.
+- Pressure is shown after precipitation in the form `1008hPa`.
 - The top weather block order is `temperature -> wind/humidity -> condition text -> precipitation`.
 - Weather text is clipped to a dedicated text area so it does not overlap the icon.
 - On macOS + Rev.A hardware, changing font size or text color can make the display path unstable.
