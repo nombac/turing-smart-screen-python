@@ -292,6 +292,16 @@ def build_canvas(width, height):
     return Image.new("RGB", (width, height), (0, 0, 0))
 
 
+def parse_brightness(value):
+    try:
+        brightness = int(value)
+    except ValueError as e:
+        raise argparse.ArgumentTypeError("brightness must be an integer between 0 and 100") from e
+    if not 0 <= brightness <= 100:
+        raise argparse.ArgumentTypeError("brightness must be an integer between 0 and 100")
+    return brightness
+
+
 def build_box(width, height):
     return Image.new("RGB", (width, height), (0, 0, 0))
 
@@ -388,6 +398,8 @@ def main():
                         help="Select the weather API provider")
     parser.add_argument("--lang", choices=["ja", "en"], default="en",
                         help="Set both weather text and date language")
+    parser.add_argument("--brightness", type=parse_brightness, default=BRIGHTNESS,
+                        help="Set LCD brightness from 0 to 100")
     args = parser.parse_args()
 
     WEATHER_TEXT_LANG = args.lang
@@ -419,7 +431,7 @@ def main():
     lcd.Reset()
     lcd.InitializeComm()
     lcd.ScreenOn()
-    lcd.SetBrightness(BRIGHTNESS)
+    lcd.SetBrightness(args.brightness)
     if args.landscape:
         lcd.SetOrientation(Orientation.LANDSCAPE)
     else:

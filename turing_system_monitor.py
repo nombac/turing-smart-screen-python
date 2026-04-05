@@ -43,6 +43,16 @@ DISK_MAX_BPS = 1_000_000_000.0
 NETWORK_MAX_BPS = 50_000_000.0
 
 
+def parse_brightness(value):
+    try:
+        brightness = int(value)
+    except ValueError as e:
+        raise argparse.ArgumentTypeError("brightness must be an integer between 0 and 100") from e
+    if not 0 <= brightness <= 100:
+        raise argparse.ArgumentTypeError("brightness must be an integer between 0 and 100")
+    return brightness
+
+
 def build_canvas(width, height):
     return Image.new("RGB", (width, height), COLOR_BG)
 
@@ -219,6 +229,8 @@ def main():
     parser.add_argument("--top-right", choices=["cpu", "memory", "disk", "network"])
     parser.add_argument("--bottom-left", choices=["cpu", "memory", "disk", "network"])
     parser.add_argument("--bottom-right", choices=["cpu", "memory", "disk", "network"])
+    parser.add_argument("--brightness", type=parse_brightness, default=BRIGHTNESS,
+                        help="Set LCD brightness from 0 to 100")
     args = parser.parse_args()
 
     font_label = ImageFont.truetype(FONT_PATH, 24)
@@ -264,7 +276,7 @@ def main():
     lcd.Reset()
     lcd.InitializeComm()
     lcd.ScreenOn()
-    lcd.SetBrightness(BRIGHTNESS)
+    lcd.SetBrightness(args.brightness)
     display_orientation = Orientation.LANDSCAPE if args.landscape else Orientation.REVERSE_LANDSCAPE
     lcd.SetOrientation(display_orientation)
 

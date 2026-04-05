@@ -53,10 +53,10 @@ python3 turing_weather_clock.py --weather-provider openweather
 python3 turing_weather_clock.py --lang ja
 ```
 
-180 度反転して表示したい場合:
+通常向きの `LANDSCAPE` で表示したい場合:
 
 ```bash
-python3 turing_weather_clock.py --rotate-180
+python3 turing_weather_clock.py --landscape
 ```
 
 PNG スナップショットだけを保存したい場合:
@@ -65,16 +65,22 @@ PNG スナップショットだけを保存したい場合:
 python3 turing_weather_clock.py --snapshot
 ```
 
-反転した向きで PNG スナップショットを保存したい場合:
+通常向きで PNG スナップショットを保存したい場合:
 
 ```bash
-python3 turing_weather_clock.py --snapshot --rotate-180
+python3 turing_weather_clock.py --snapshot --landscape
 ```
 
 天気 API を使わず、時計と日付だけ表示したい場合:
 
 ```bash
 python3 turing_weather_clock.py --exclude-weather
+```
+
+起動時に明るさを指定したい場合:
+
+```bash
+python3 turing_weather_clock.py --brightness 40
 ```
 
 ### 設定パラメタ
@@ -235,9 +241,9 @@ python3 turing_weather_clock.py --exclude-weather
 
 - `--snapshot`
   LCD に送らず、現在の表示内容を `turing_weather_clock_snapshot.png` として保存します。
-- `--rotate-180`
-  表示全体を 180 度回転します。既定値は従来どおり非回転です。
-  `--snapshot` と併用した場合は、保存される PNG も同じ向きで 180 度回転します。
+- `--landscape`
+  通常向きの `LANDSCAPE` で表示します。
+  指定しない場合は 180 度反転した `REVERSE_LANDSCAPE` が既定です。
 - `--weather-provider`
   天気 API を `weatherapi` または `openweather` から選択します。
   既定値は `weatherapi` です。
@@ -247,6 +253,9 @@ python3 turing_weather_clock.py --exclude-weather
 - `--exclude-weather`
   天気ブロックを描画せず、時刻と日付だけを表示します。
   このモードでは天気 API を呼ばないため、API キーなしで使えます。
+- `--brightness`
+  LCD の明るさを `0` から `100` の整数で指定します。
+  指定しない場合は `BRIGHTNESS` の設定値 `25` を使います。
 
 ### 補足
 
@@ -324,10 +333,10 @@ If you want Japanese weather text and date formatting:
 python3 turing_weather_clock.py --lang ja
 ```
 
-If you want the whole display rotated by 180 degrees:
+If you want normal `LANDSCAPE` orientation:
 
 ```bash
-python3 turing_weather_clock.py --rotate-180
+python3 turing_weather_clock.py --landscape
 ```
 
 If you want to save a PNG snapshot instead of sending to the LCD:
@@ -336,16 +345,22 @@ If you want to save a PNG snapshot instead of sending to the LCD:
 python3 turing_weather_clock.py --snapshot
 ```
 
-If you want a PNG snapshot with the same 180-degree rotation applied:
+If you want a PNG snapshot using normal orientation:
 
 ```bash
-python3 turing_weather_clock.py --snapshot --rotate-180
+python3 turing_weather_clock.py --snapshot --landscape
 ```
 
 If you want to use it as a clock without any weather API access:
 
 ```bash
 python3 turing_weather_clock.py --exclude-weather
+```
+
+If you want to set brightness at startup:
+
+```bash
+python3 turing_weather_clock.py --brightness 40
 ```
 
 ### Configurable Parameters
@@ -506,9 +521,9 @@ If a required key is missing or the API response is invalid, the script stops wi
 
 - `--snapshot`
   Saves the current display as `turing_weather_clock_snapshot.png` instead of sending it to the LCD.
-- `--rotate-180`
-  Rotates the entire output by 180 degrees. The default remains the original non-rotated orientation.
-  When combined with `--snapshot`, the saved PNG is rotated the same way.
+- `--landscape`
+  Uses normal `LANDSCAPE` orientation.
+  If omitted, the default is 180-degree rotated `REVERSE_LANDSCAPE`.
 - `--weather-provider`
   Selects the weather API provider: `weatherapi` or `openweather`.
   The default is `weatherapi`.
@@ -519,6 +534,9 @@ If a required key is missing or the API response is invalid, the script stops wi
 - `--exclude-weather`
   Hides the weather block and only shows time and date.
   In this mode the script does not call any weather API, so it works without API keys.
+- `--brightness`
+  Sets LCD brightness as an integer from `0` to `100`.
+  If omitted, the configured `BRIGHTNESS` value `25` is used.
 
 ### Notes
 

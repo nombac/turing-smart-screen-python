@@ -49,6 +49,12 @@ python3 turing_system_monitor.py --top-left cpu
 python3 turing_system_monitor.py --top-right memory --bottom-left disk
 ```
 
+起動時に明るさを指定したい場合:
+
+```bash
+python3 turing_system_monitor.py --brightness 40
+```
+
 ### コマンドラインオプション
 
 - `--snapshot`
@@ -65,6 +71,9 @@ python3 turing_system_monitor.py --top-right memory --bottom-left disk
   左下に表示する指標を `cpu` / `memory` / `disk` / `network` から選びます。
 - `--bottom-right`
   右下に表示する指標を `cpu` / `memory` / `disk` / `network` から選びます。
+- `--brightness`
+  LCD の明るさを `0` から `100` の整数で指定します。
+  指定しない場合は `BRIGHTNESS` の設定値 `25` を使います。
 
 1 つでも位置指定をした場合は、その指定された枠だけを表示します。何も指定しない場合だけ、4 枠の既定配置になります。
 
@@ -207,6 +216,12 @@ python3 turing_system_monitor.py --top-left cpu
 python3 turing_system_monitor.py --top-right memory --bottom-left disk
 ```
 
+To set brightness at startup:
+
+```bash
+python3 turing_system_monitor.py --brightness 40
+```
+
 ### Command-line options
 
 - `--snapshot`
@@ -223,6 +238,9 @@ python3 turing_system_monitor.py --top-right memory --bottom-left disk
   Selects `cpu`, `memory`, `disk`, or `network` for the bottom-left quadrant.
 - `--bottom-right`
   Selects `cpu`, `memory`, `disk`, or `network` for the bottom-right quadrant.
+- `--brightness`
+  Sets LCD brightness as an integer from `0` to `100`.
+  If omitted, the configured `BRIGHTNESS` value `25` is used.
 
 If at least one position is specified, only the specified quadrants are shown. If nothing is specified, the default 4-quadrant layout is used.
 
