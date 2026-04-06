@@ -30,6 +30,7 @@ BRIGHTNESS = 25
 # - weatherapi を使う場合は WEATHERAPI_KEY
 # - openweather を使う場合は OPENWEATHER_API_KEY
 WEATHER_PROVIDER = "weatherapi"
+TEMP_SUBINFO_MODE = "feels-like"
 # 天気の取得場所を変える場合はここを編集する。例: "Tokyo", "Yokohama"
 WEATHERAPI_LOCATION = "Yokohama"
 # 天気文言と風向の表示言語:
@@ -155,6 +156,7 @@ def fetch_weatherapi_current(location):
 
     try:
         temp_c = current_data["current"]["temp_c"]
+        feels_like_c = current_data["current"]["feelslike_c"]
         humidity = current_data["current"]["humidity"]
         precip_mm = current_data["current"]["precip_mm"]
         pressure_hpa = current_data["current"]["pressure_mb"]
@@ -170,6 +172,7 @@ def fetch_weatherapi_current(location):
     icon_url = f"https:{icon_path}" if icon_path.startswith("//") else icon_path
     return {
         "temp_c": temp_c,
+        "feels_like_c": feels_like_c,
         "humidity": humidity,
         "precip_mm": precip_mm,
         "pressure_hpa": pressure_hpa,
@@ -202,6 +205,7 @@ def fetch_openweather_current(location):
 
     try:
         temp_c = data["main"]["temp"]
+        feels_like_c = data["main"]["feels_like"]
         humidity = data["main"]["humidity"]
         pressure_hpa = data["main"]["pressure"]
         condition_text = data["weather"][0]["description"]
@@ -217,6 +221,7 @@ def fetch_openweather_current(location):
 
     return {
         "temp_c": temp_c,
+        "feels_like_c": feels_like_c,
         "humidity": humidity,
         "precip_mm": precip_mm,
         "pressure_hpa": pressure_hpa,
@@ -233,8 +238,12 @@ def resolve_condition_text(provider, condition_text, precip_mm):
     return condition_text
 
 
-def resolve_temp_text(temp_c, max_temp_c, min_temp_c, provider):
+def resolve_temp_text(temp_c, feels_like_c, max_temp_c, min_temp_c, provider, temp_subinfo_mode):
     temp_text = f"{temp_c:g}°C"
+    if temp_subinfo_mode == "feels-like":
+        if feels_like_c is None:
+            raise RuntimeError("feels_like_c is missing")
+        return f"{temp_text} (FL {feels_like_c:g}°C)"
     if provider == "openweather":
         return temp_text
     if max_temp_c is None or min_temp_c is None:
@@ -243,10 +252,10 @@ def resolve_temp_text(temp_c, max_temp_c, min_temp_c, provider):
 
 
 def split_temp_text(temp_text):
-    hl_start = temp_text.find(" (H:")
-    if hl_start == -1:
+    subinfo_start = temp_text.rfind(" (")
+    if subinfo_start == -1:
         return temp_text, ""
-    return temp_text[:hl_start], temp_text[hl_start:]
+    return temp_text[:subinfo_start], temp_text[subinfo_start:]
 
 
 def resolve_wind_text(wind_kph, wind_dir, humidity):
@@ -271,7 +280,7 @@ def resolve_precip_pressure_text(precip_mm, pressure_hpa):
     return pressure_text
 
 
-def get_weather(weather_provider, location):
+def get_weather(weather_provider, location, temp_subinfo_mode):
     if weather_provider == "weatherapi":
         current = fetch_weatherapi_current(location)
     elif weather_provider == "openweather":
@@ -280,7 +289,14 @@ def get_weather(weather_provider, location):
         raise RuntimeError(f"Unsupported WEATHER_PROVIDER: {weather_provider}")
 
     return {
-        "temp_text": resolve_temp_text(current["temp_c"], current["max_temp_c"], current["min_temp_c"], weather_provider),
+        "temp_text": resolve_temp_text(
+            current["temp_c"],
+            current["feels_like_c"],
+            current["max_temp_c"],
+            current["min_temp_c"],
+            weather_provider,
+            temp_subinfo_mode,
+        ),
         "condition_text": resolve_condition_text(
             weather_provider,
             current["condition_text"],
@@ -434,6 +450,8 @@ def main():
                         help="Select the weather API provider")
     parser.add_argument("--location", default=WEATHERAPI_LOCATION,
                         help="Set the weather query location")
+    parser.add_argument("--temp-subinfo", choices=["hl", "feels-like"], default=TEMP_SUBINFO_MODE,
+                        help="Select the temperature subinfo style")
     parser.add_argument("--lang", choices=["ja", "en"], default="en",
                         help="Set both weather text and date language")
     parser.add_argument("--brightness", type=parse_brightness, default=BRIGHTNESS,
@@ -451,9 +469,10 @@ def main():
     font_date = ImageFont.truetype(FONT_PATH_JA, FONT_SIZE_DATE)
     weather_provider = args.weather_provider
     weather_location = args.location
+    temp_subinfo_mode = args.temp_subinfo
     weather = None
     if not args.exclude_weather:
-        weather = get_weather(weather_provider, weather_location)
+        weather = get_weather(weather_provider, weather_location, temp_subinfo_mode)
     now = time.localtime()
 
     if args.snapshot:
@@ -506,7 +525,7 @@ def main():
         while True:
             if not args.exclude_weather and time.time() - last_weather > WEATHER_UPDATE_MIN * 60:
                 now = time.localtime()
-                weather = get_weather(weather_provider, weather_location)
+                weather = get_weather(weather_provider, weather_location, temp_subinfo_mode)
                 top_box, _, _, bottom_box = build_display_boxes(
                     (font_source, font_weather_bold, font_weather), font_date, font_large, font_seconds, weather, now
                 )
