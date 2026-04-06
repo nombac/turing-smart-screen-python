@@ -5,6 +5,7 @@ import os
 from io import BytesIO
 import time
 import urllib.request
+from datetime import datetime, timedelta, timezone
 
 from PIL import Image, ImageDraw, ImageFont
 
@@ -164,6 +165,7 @@ def fetch_weatherapi_current(location):
         icon_path = current_data["current"]["condition"]["icon"]
         wind_kph = current_data["current"]["wind_kph"]
         wind_dir = current_data["current"]["wind_dir"]
+        observation_epoch = current_data["current"]["last_updated_epoch"]
         max_temp_c = forecast_data["forecast"]["forecastday"][0]["day"]["maxtemp_c"]
         min_temp_c = forecast_data["forecast"]["forecastday"][0]["day"]["mintemp_c"]
     except KeyError as e:
@@ -182,6 +184,7 @@ def fetch_weatherapi_current(location):
         "wind_kph": wind_kph,
         "wind_dir": wind_dir,
         "icon_url": icon_url,
+        "observation_time_text": datetime.fromtimestamp(observation_epoch).strftime("%H:%M"),
     }
 
 
@@ -212,6 +215,8 @@ def fetch_openweather_current(location):
         icon_code = data["weather"][0]["icon"]
         wind_ms = data["wind"]["speed"]
         wind_deg = data["wind"]["deg"]
+        observation_epoch = data["dt"]
+        timezone_offset = data["timezone"]
     except (KeyError, IndexError) as e:
         raise RuntimeError(f"OpenWeather response is missing expected field: {e}") from e
 
@@ -219,6 +224,7 @@ def fetch_openweather_current(location):
     snow_1h = data.get("snow", {}).get("1h", 0.0)
     precip_mm = rain_1h + snow_1h
 
+    local_tz = timezone(timedelta(seconds=timezone_offset))
     return {
         "temp_c": temp_c,
         "feels_like_c": feels_like_c,
@@ -231,6 +237,7 @@ def fetch_openweather_current(location):
         "wind_kph": wind_ms * 3.6,
         "wind_dir": wind_deg_to_dir(wind_deg),
         "icon_url": f"https://openweathermap.org/img/wn/{icon_code}@2x.png",
+        "observation_time_text": datetime.fromtimestamp(observation_epoch, tz=local_tz).strftime("%H:%M"),
     }
 
 
@@ -305,7 +312,7 @@ def get_weather(weather_provider, location, temp_subinfo_mode):
         "precip_text": resolve_precip_pressure_text(current["precip_mm"], current["pressure_hpa"]),
         "wind_text": resolve_wind_text(current["wind_kph"], current["wind_dir"], current["humidity"]),
         "icon_url": current["icon_url"],
-        "source_text": f"{location} ({'WeatherAPI' if weather_provider == 'weatherapi' else 'OpenWeather'})",
+        "source_text": f"{location} {current['observation_time_text']} ({'WeatherAPI' if weather_provider == 'weatherapi' else 'OpenWeather'})",
     }
 
 
