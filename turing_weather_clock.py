@@ -129,7 +129,7 @@ def format_date_text(now):
     raise RuntimeError(f"Unsupported DATE_LANG: {DATE_LANG}")
 
 
-def fetch_weatherapi_current():
+def fetch_weatherapi_current(location):
     api_key = os.environ.get("WEATHERAPI_KEY")
     if not api_key:
         raise RuntimeError("WEATHERAPI_KEY is not set")
@@ -139,11 +139,11 @@ def fetch_weatherapi_current():
     weather_lang = f"&lang={WEATHER_TEXT_LANG}"
     current_url = (
         "https://api.weatherapi.com/v1/current.json"
-        f"?key={api_key}&q={WEATHERAPI_LOCATION}&aqi=no{weather_lang}"
+        f"?key={api_key}&q={location}&aqi=no{weather_lang}"
     )
     forecast_url = (
         "https://api.weatherapi.com/v1/forecast.json"
-        f"?key={api_key}&q={WEATHERAPI_LOCATION}&days=1&aqi=no&alerts=no{weather_lang}"
+        f"?key={api_key}&q={location}&days=1&aqi=no&alerts=no{weather_lang}"
     )
     try:
         current_payload = urllib.request.urlopen(current_url, timeout=10).read().decode("utf-8")
@@ -182,7 +182,7 @@ def fetch_weatherapi_current():
     }
 
 
-def fetch_openweather_current():
+def fetch_openweather_current(location):
     api_key = os.environ.get("OPENWEATHER_API_KEY")
     if not api_key:
         raise RuntimeError("OPENWEATHER_API_KEY is not set")
@@ -192,7 +192,7 @@ def fetch_openweather_current():
 
     url = (
         "https://api.openweathermap.org/data/2.5/weather"
-        f"?q={WEATHERAPI_LOCATION}&appid={api_key}&units=metric&lang={WEATHER_TEXT_LANG}"
+        f"?q={location}&appid={api_key}&units=metric&lang={WEATHER_TEXT_LANG}"
     )
     try:
         payload = urllib.request.urlopen(url, timeout=10).read().decode("utf-8")
@@ -270,11 +270,11 @@ def resolve_precip_pressure_text(precip_mm, pressure_hpa):
     return pressure_text
 
 
-def get_weather(weather_provider):
+def get_weather(weather_provider, location):
     if weather_provider == "weatherapi":
-        current = fetch_weatherapi_current()
+        current = fetch_weatherapi_current(location)
     elif weather_provider == "openweather":
-        current = fetch_openweather_current()
+        current = fetch_openweather_current(location)
     else:
         raise RuntimeError(f"Unsupported WEATHER_PROVIDER: {weather_provider}")
 
@@ -288,7 +288,7 @@ def get_weather(weather_provider):
         "precip_text": resolve_precip_pressure_text(current["precip_mm"], current["pressure_hpa"]),
         "wind_text": resolve_wind_text(current["wind_kph"], current["wind_dir"], current["humidity"]),
         "icon_url": current["icon_url"],
-        "source_text": "WeatherAPI" if weather_provider == "weatherapi" else "OpenWeather",
+        "source_text": f"{location} ({'WeatherAPI' if weather_provider == 'weatherapi' else 'OpenWeather'})",
     }
 
 
@@ -431,6 +431,8 @@ def main():
     parser.add_argument("--exclude-weather", action="store_true", help="Hide the weather block and run as a clock without weather API access")
     parser.add_argument("--weather-provider", choices=["weatherapi", "openweather"], default=WEATHER_PROVIDER,
                         help="Select the weather API provider")
+    parser.add_argument("--location", default=WEATHERAPI_LOCATION,
+                        help="Set the weather query location")
     parser.add_argument("--lang", choices=["ja", "en"], default="en",
                         help="Set both weather text and date language")
     parser.add_argument("--brightness", type=parse_brightness, default=BRIGHTNESS,
@@ -447,9 +449,10 @@ def main():
     font_weather = ImageFont.truetype(FONT_PATH_JA, FONT_SIZE_WEATHER)
     font_date = ImageFont.truetype(FONT_PATH_JA, FONT_SIZE_DATE)
     weather_provider = args.weather_provider
+    weather_location = args.location
     weather = None
     if not args.exclude_weather:
-        weather = get_weather(weather_provider)
+        weather = get_weather(weather_provider, weather_location)
     now = time.localtime()
 
     if args.snapshot:
@@ -502,7 +505,7 @@ def main():
         while True:
             if not args.exclude_weather and time.time() - last_weather > WEATHER_UPDATE_MIN * 60:
                 now = time.localtime()
-                weather = get_weather(weather_provider)
+                weather = get_weather(weather_provider, weather_location)
                 top_box, _, _, bottom_box = build_display_boxes(
                     (font_source, font_weather_bold, font_weather), font_date, font_large, font_seconds, weather, now
                 )

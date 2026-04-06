@@ -5,7 +5,7 @@
 ## 日本語
 
 `turing_weather_clock.py` は、Turing Smart Screen 向けの時計・天気表示スクリプトです。  
-上段に天気取得ソース、小さい天気アイコン、気温、風向風速と湿度、天気文言、降水量、中段に時刻、下段に日付を表示します。
+上段に場所付きの天気取得ソース、小さい天気アイコン、気温、天気文言、風向風速と湿度、降水量、中段に時分と秒を分けた時刻、下段に日付を表示します。
 
 現在のパラメタ値は、3.5 インチのディスプレイ向けに調整されています。
 
@@ -47,6 +47,12 @@ OpenWeather を使いたい場合:
 python3 turing_weather_clock.py --weather-provider openweather
 ```
 
+場所を指定したい場合:
+
+```bash
+python3 turing_weather_clock.py --location Tokyo
+```
+
 日本語表示にしたい場合:
 
 ```bash
@@ -65,10 +71,10 @@ PNG スナップショットだけを保存したい場合:
 python3 turing_weather_clock.py --snapshot
 ```
 
-通常向きで PNG スナップショットを保存したい場合:
+通常向きで表示したい場合:
 
 ```bash
-python3 turing_weather_clock.py --snapshot --landscape
+python3 turing_weather_clock.py --landscape
 ```
 
 天気 API を使わず、時計と日付だけ表示したい場合:
@@ -123,7 +129,7 @@ python3 turing_weather_clock.py --brightness 40
   現在値: `"en"`
 - `FONT_SIZE_WEATHER`
   上段の天気情報フォントサイズです。
-  現在値: `24`
+  現在値: `28`
 - `FONT_SIZE_SOURCE`
   上段最上部の天気取得ソース名フォントサイズです。
   現在値: `14`
@@ -153,13 +159,13 @@ python3 turing_weather_clock.py --brightness 40
   現在値: `18`
 - `WEATHER_LINE2_Y`
   上段天気ボックス2行目の Y オフセットです。
-  現在値: `44`
+  現在値: 現在のコード値を参照
 - `WEATHER_LINE3_Y`
   上段天気ボックス3行目の Y オフセットです。
-  現在値: `70`
+  現在値: 現在のコード値を参照
 - `WEATHER_LINE4_Y`
   上段天気ボックス4行目の Y オフセットです。
-  現在値: `96`
+  現在値: 現在のコード値を参照
 - `WEATHER_ICON_SIZE`
   天気アイコンの表示サイズです。
   現在値: `100`
@@ -183,16 +189,19 @@ python3 turing_weather_clock.py --brightness 40
   現在値: `88`
 - `UPDATE_INTERVAL_SEC`
   表示更新ループの間隔です。主に時刻更新の周期に効きます。
-  現在値: `0.5`
+  現在値: `1`
 - `TIME_X`
   中段の時刻ボックスの左位置です。
   現在値: `20`
 - `TIME_Y`
   中段の時刻ボックスの上端位置です。
   現在値: `140`
-- `TIME_BOX_WIDTH`
-  時刻ボックスの幅です。
-  現在値: `430`
+- `FONT_SIZE_SECONDS`
+  秒表示のフォントサイズです。
+  現在値: `60`
+- `TIME_SECONDS_BOX_WIDTH`
+  秒ボックスの幅です。
+  現在値: `110`
 - `TIME_BOX_HEIGHT`
   時刻ボックスの高さです。
   現在値: `FONT_SIZE_TIME + 20`
@@ -223,7 +232,7 @@ python3 turing_weather_clock.py --brightness 40
   現在値: `80`
 - `DATE_LINE_Y`
   下段日付ボックス内での日付文字の Y オフセットです。
-  現在値: `42`
+  現在値: `25`
 - `COLOR_DATE`
   下段の日付の文字色です。
   現在値: `(180, 220, 255)`
@@ -247,6 +256,9 @@ python3 turing_weather_clock.py --brightness 40
 - `--weather-provider`
   天気 API を `weatherapi` または `openweather` から選択します。
   既定値は `weatherapi` です。
+- `--location`
+  天気取得場所を指定します。
+  指定しない場合は `WEATHERAPI_LOCATION` を使います。
 - `--lang`
   天気文言と日付言語をまとめて `ja` / `en` で切り替えます。
   既定値は `en` です。
@@ -266,7 +278,11 @@ python3 turing_weather_clock.py --brightness 40
   降水量は `rain["1h"]` と `snow["1h"]` を合算して表示します。
 - 風向きは日本語時のみ自前辞書で日本語方位に変換します。英語時は API の方位記号をそのまま使います。
 - 気圧は降水量の後ろに `1008hPa` の形式で表示します。
-- 上段天気ブロックの表示順は `気温 -> 風・湿度 -> 文言 -> 降水量` です。
+- source 表示は `Yokohama (WeatherAPI)` のように、場所とソースを表示します。
+- 上段天気ブロックの表示順は `気温 -> 文言 -> 風・湿度 -> 降水量` です。
+- 時刻は `07:58 03` のように、時分と秒を分けて表示します。
+- 秒は毎秒更新し、時分は秒が `00` になったときだけ更新します。
+- PNG スナップショットは常に正立保存です。
 - 天気テキストはアイコンと重ならないよう、左側の専用描画領域に制限しています。
 - macOS + Rev.A 環境では、フォントサイズや文字色を変えると通信が不安定になることがあります。
   具体的には、表示直後や更新時に `Device not configured` などで停止する場合があります。
@@ -285,7 +301,7 @@ python3 turing_weather_clock.py --brightness 40
 ## English
 
 `turing_weather_clock.py` is a clock and weather display script for Turing Smart Screen.  
-It shows the weather source label, a small weather icon, temperature, wind with humidity, weather text, precipitation on the top area, time in the middle, and date at the bottom.
+It shows a location-aware weather source label, a small weather icon, temperature, weather text, wind with humidity, precipitation on the top area, split time in the middle, and date at the bottom.
 
 The current parameter values are tuned for a 3.5-inch display.
 
@@ -327,6 +343,12 @@ If you want to use OpenWeather instead:
 python3 turing_weather_clock.py --weather-provider openweather
 ```
 
+If you want to override the weather location:
+
+```bash
+python3 turing_weather_clock.py --location Tokyo
+```
+
 If you want Japanese weather text and date formatting:
 
 ```bash
@@ -345,10 +367,10 @@ If you want to save a PNG snapshot instead of sending to the LCD:
 python3 turing_weather_clock.py --snapshot
 ```
 
-If you want a PNG snapshot using normal orientation:
+If you want normal `LANDSCAPE` orientation:
 
 ```bash
-python3 turing_weather_clock.py --snapshot --landscape
+python3 turing_weather_clock.py --landscape
 ```
 
 If you want to use it as a clock without any weather API access:
@@ -402,7 +424,7 @@ The following parameters can be edited near the top of [`turing_weather_clock.py
   Current value: `"en"`
 - `FONT_SIZE_WEATHER`
   Font size for the top weather area.
-  Current value: `24`
+  Current value: `28`
 - `FONT_SIZE_SOURCE`
   Font size for the small weather source label at the very top.
   Current value: `14`
@@ -432,13 +454,13 @@ The following parameters can be edited near the top of [`turing_weather_clock.py
   Current value: `18`
 - `WEATHER_LINE2_Y`
   Y offset for line 2 inside the top weather box.
-  Current value: `44`
+  Current value: see current code
 - `WEATHER_LINE3_Y`
   Y offset for line 3 inside the top weather box.
-  Current value: `70`
+  Current value: see current code
 - `WEATHER_LINE4_Y`
   Y offset for line 4 inside the top weather box.
-  Current value: `96`
+  Current value: see current code
 - `WEATHER_ICON_SIZE`
   Rendered size of the weather icon.
   Current value: `100`
@@ -462,16 +484,19 @@ The following parameters can be edited near the top of [`turing_weather_clock.py
   Current value: `88`
 - `UPDATE_INTERVAL_SEC`
   Main display update loop interval in seconds.
-  Current value: `0.5`
+  Current value: `1`
 - `TIME_X`
   Left position of the time box.
   Current value: `20`
 - `TIME_Y`
   Top position of the time box.
   Current value: `140`
-- `TIME_BOX_WIDTH`
-  Width of the time box.
-  Current value: `430`
+- `FONT_SIZE_SECONDS`
+  Font size for the seconds display.
+  Current value: `60`
+- `TIME_SECONDS_BOX_WIDTH`
+  Width of the seconds box.
+  Current value: `110`
 - `TIME_BOX_HEIGHT`
   Height of the time box.
   Current value: `FONT_SIZE_TIME + 20`
@@ -503,7 +528,7 @@ The following parameters can be edited near the top of [`turing_weather_clock.py
   Current value: `80`
 - `DATE_LINE_Y`
   Y offset for the date text inside the date box.
-  Current value: `42`
+  Current value: `25`
 - `COLOR_DATE`
   Text color for the date.
   Current value: `(180, 220, 255)`
@@ -527,6 +552,9 @@ If a required key is missing or the API response is invalid, the script stops wi
 - `--weather-provider`
   Selects the weather API provider: `weatherapi` or `openweather`.
   The default is `weatherapi`.
+- `--location`
+  Sets the weather query location.
+  If omitted, `WEATHERAPI_LOCATION` is used.
 - `--lang`
   Sets both weather text language and date language at the same time.
   Supported values: `ja`, `en`
@@ -547,7 +575,11 @@ If a required key is missing or the API response is invalid, the script stops wi
   Precipitation is derived from `rain["1h"] + snow["1h"]`.
 - Wind direction is still converted with the built-in direction table in Japanese mode. In English mode the API direction code is shown as-is.
 - Pressure is shown after precipitation in the form `1008hPa`.
-- The top weather block order is `temperature -> wind/humidity -> condition text -> precipitation`.
+- The source label is shown as `Yokohama (WeatherAPI)` style text.
+- The top weather block order is `temperature -> condition text -> wind/humidity -> precipitation`.
+- Time is shown in split form such as `07:58 03`.
+- Seconds are updated every second, while `HH:MM` is only updated when seconds reach `00`.
+- PNG snapshots are always saved upright.
 - Weather text is clipped to a dedicated text area so it does not overlap the icon.
 - On macOS + Rev.A hardware, changing font size or text color can make the display path unstable.
   In practice, the script may stop during initial draw or later updates with errors such as `Device not configured`.
