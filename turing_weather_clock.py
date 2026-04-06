@@ -234,11 +234,12 @@ def resolve_condition_text(provider, condition_text, precip_mm):
 
 
 def resolve_temp_text(temp_c, max_temp_c, min_temp_c, provider):
+    temp_text = f"{temp_c:g}°C"
     if provider == "openweather":
-        return f"{temp_c:+g}°C"
+        return temp_text
     if max_temp_c is None or min_temp_c is None:
-        return f"{temp_c:+g}°C (H:--, L:--)"
-    return f"{temp_c:+g}°C (H:{max_temp_c:.0f}, L:{min_temp_c:.0f})"
+        return f"{temp_text} (H:--, L:--)"
+    return f"{temp_text} (H:{max_temp_c:.0f}, L:{min_temp_c:.0f})"
 
 
 def split_temp_text(temp_text):
