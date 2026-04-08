@@ -6,11 +6,19 @@ This fork includes macOS Rev.A display fixes, a custom weather clock example, a 
 
 See [README_turing_weather_clock.md](./README_turing_weather_clock.md), [README_turing_system_monitor.md](./README_turing_system_monitor.md), and [README_turing_weather_forecast_monitor.md](./README_turing_weather_forecast_monitor.md) for details.
 
+> **Note:** Blue-toned colors are known to occasionally cause display crashes on Rev.A hardware. If you experience crashes, try changing the color to white `(255, 255, 255)` first to confirm, then adjust from there.
+
 <p>
   <img src="./turing_weather_clock_snapshot.png" alt="Turing Weather Clock" width="32%" />
   <img src="./turing_system_monitor_snapshot.png" alt="Turing System Monitor" width="32%" />
   <img src="./turing_weather_forecast_monitor_snapshot.png" alt="Turing Weather Forecast Monitor" width="32%" />
 </p>
+
+&nbsp;
+
+&nbsp;
+
+---
 
 ### ⚠️ DISCLAIMER - PLEASE READ ⚠️
 

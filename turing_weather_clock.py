@@ -82,7 +82,7 @@ DATE_Y = 265
 DATE_BOX_WIDTH = 430
 DATE_BOX_HEIGHT = 60
 DATE_LINE_Y = 5
-COLOR_DATE = (180, 220, 255)
+COLOR_DATE = (210, 230, 255)
 
 
 WEEKDAY_SHORT_JA = ["月", "火", "水", "木", "金", "土", "日"]
