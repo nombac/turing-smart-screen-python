@@ -343,7 +343,7 @@ def build_wind_panel(font_header, font_cardinal, records):
     draw.text((10, 8), "Wind", font=font_header, fill=COLOR_LABEL)
 
     current = records[-1]
-    current_text = f"{current['wind_speed_mps']:.2f}m/s"
+    current_text = f"{current['wind_speed_mps']:.1f}m/s"
     value_width = draw.textlength(current_text, font=font_header)
     draw.text((PANEL_W - 10 - value_width, 8), current_text, font=font_header, fill=COLOR_WIND_LATEST)
 
@@ -424,7 +424,7 @@ def build_wind_panel(font_header, font_cardinal, records):
 
 
 def format_temp(value):
-    return f"{value:g}°C"
+    return f"{value:.1f}°C"
 
 
 def format_percent(value):
@@ -432,7 +432,7 @@ def format_percent(value):
 
 
 def format_precip(value):
-    return f"{value:g}mm/h"
+    return f"{value:.1f}mm/h"
 
 
 def format_pressure(value):
