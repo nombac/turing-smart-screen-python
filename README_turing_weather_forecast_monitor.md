@@ -34,6 +34,8 @@ OpenWeather を使う場合:
 export OPENWEATHER_API_KEY='YOUR_OPENWEATHER_API_KEY'
 ```
 
+Weathernews を使う場合は API キー不要です。
+
 3. スクリプトを実行します。
 
 ```bash
@@ -44,6 +46,12 @@ OpenWeather を使う場合:
 
 ```bash
 python3 turing_weather_forecast_monitor.py --weather-provider openweather
+```
+
+Weathernews を使う場合:
+
+```bash
+python3 turing_weather_forecast_monitor.py --weather-provider weathernews
 ```
 
 場所を指定したい場合:
@@ -77,7 +85,8 @@ python3 turing_weather_forecast_monitor.py --brightness 40
 - `--landscape`
   通常向きの `LANDSCAPE` で表示します。指定しない場合は 180 度反転した `REVERSE_LANDSCAPE` が既定です。
 - `--weather-provider`
-  天気 API を `weatherapi` または `openweather` から選択します。既定値は `weatherapi` です。
+  天気 API を `weatherapi`、`openweather`、`weathernews` から選択します。既定値は `weatherapi` です。
+  `weathernews` は API キー不要で、Nominatim (OpenStreetMap) による都市名→緯度経度の自動変換に対応しています。`--location "35.44,139.64"` のような直接指定も可能です。
 - `--location`
   天気取得場所を指定します。
 - `--brightness`
@@ -106,6 +115,8 @@ python3 turing_weather_forecast_monitor.py --brightness 40
   [`turing_weather_history_weatherapi.jsonl`](/Users/shirose/Library/CloudStorage/Dropbox/turing-smart-screen-python/turing_weather_history_weatherapi.jsonl)
 - `openweather`:
   [`turing_weather_history_openweather.jsonl`](/Users/shirose/Library/CloudStorage/Dropbox/turing-smart-screen-python/turing_weather_history_openweather.jsonl)
+- `weathernews`:
+  [`turing_weather_history_weathernews.jsonl`](/Users/shirose/Library/CloudStorage/Dropbox/turing-smart-screen-python/turing_weather_history_weathernews.jsonl)
 
 予報データは別の provider ごとの JSONL に保存されます。
 
@@ -113,6 +124,8 @@ python3 turing_weather_forecast_monitor.py --brightness 40
   [`turing_weather_forecast_weatherapi.jsonl`](/Users/shirose/Library/CloudStorage/Dropbox/turing-smart-screen-python/turing_weather_forecast_weatherapi.jsonl)
 - `openweather`:
   [`turing_weather_forecast_openweather.jsonl`](/Users/shirose/Library/CloudStorage/Dropbox/turing-smart-screen-python/turing_weather_forecast_openweather.jsonl)
+- `weathernews`:
+  [`turing_weather_forecast_weathernews.jsonl`](/Users/shirose/Library/CloudStorage/Dropbox/turing-smart-screen-python/turing_weather_forecast_weathernews.jsonl)
 
 実測 JSONL の必須キーは次です。
 
@@ -210,6 +223,8 @@ For OpenWeather:
 export OPENWEATHER_API_KEY='YOUR_OPENWEATHER_API_KEY'
 ```
 
+For Weathernews, no API key is required.
+
 3. Run the script.
 
 ```bash
@@ -220,6 +235,12 @@ To use OpenWeather:
 
 ```bash
 python3 turing_weather_forecast_monitor.py --weather-provider openweather
+```
+
+To use Weathernews:
+
+```bash
+python3 turing_weather_forecast_monitor.py --weather-provider weathernews
 ```
 
 To set a location:
@@ -253,7 +274,8 @@ python3 turing_weather_forecast_monitor.py --brightness 40
 - `--landscape`
   Uses normal `LANDSCAPE` orientation. If omitted, the default is 180-degree rotated `REVERSE_LANDSCAPE`.
 - `--weather-provider`
-  Selects `weatherapi` or `openweather`. Default: `weatherapi`.
+  Selects `weatherapi`, `openweather`, or `weathernews`. Default: `weatherapi`.
+  `weathernews` requires no API key and supports automatic city-to-coordinates conversion via Nominatim (OpenStreetMap). Direct coordinates like `--location "35.44,139.64"` are also accepted.
 - `--location`
   Sets the weather query location.
 - `--brightness`

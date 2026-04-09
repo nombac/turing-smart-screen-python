@@ -4,6 +4,7 @@ import json
 import math
 import os
 import time
+import urllib.parse
 import urllib.request
 from datetime import datetime
 from io import BytesIO
@@ -314,7 +315,8 @@ def build_info_panel_with_icon(font_date, font_time, font_meta, display_epoch, l
     observed_dt = datetime.fromtimestamp(display_epoch)
     date_text = observed_dt.strftime("%Y-%m-%d")
     time_text = observed_dt.strftime("%H:%M")
-    provider_text = "WeatherAPI" if provider == "weatherapi" else "OpenWeather"
+    provider_names = {"weatherapi": "WeatherAPI", "openweather": "OpenWeather", "weathernews": "Weathernews"}
+    provider_text = provider_names.get(provider, provider)
 
     date_width = draw.textlength(date_text, font=font_date)
     time_width = draw.textlength(time_text, font=font_time)
@@ -324,10 +326,13 @@ def build_info_panel_with_icon(font_date, font_time, font_meta, display_epoch, l
     draw.text(((PANEL_W - date_width) / 2, 8), date_text, font=font_date, fill=COLOR_LABEL)
     draw.text(((PANEL_W - time_width) / 2, 28), time_text, font=font_time, fill=COLOR_LABEL)
 
+    icon_sizes = {"weatherapi": (110, 110), "openweather": (110, 110), "weathernews": (80, 59)}
     if icon_image is not None:
-        icon = icon_image.resize((110, 110))
+        icon_size = icon_sizes.get(provider, (110, 110))
+        icon = icon_image.resize(icon_size)
         icon_x = (PANEL_W - icon.width) // 2
-        panel.paste(icon, (icon_x, 40), icon)
+        icon_y = 40 + (110 - icon.height) // 2
+        panel.paste(icon, (icon_x, icon_y), icon)
 
     draw.text(((PANEL_W - location_width) / 2, 128), location, font=font_meta, fill=COLOR_LABEL)
     draw.text(((PANEL_W - provider_width) / 2, 140), provider_text, font=font_meta, fill=COLOR_LABEL)
@@ -440,13 +445,13 @@ def format_pressure(value):
 
 
 def get_history_file_path(provider):
-    if provider not in {"weatherapi", "openweather"}:
+    if provider not in {"weatherapi", "openweather", "weathernews"}:
         raise RuntimeError(f"Unsupported WEATHER_PROVIDER for history file: {provider}")
     return HISTORY_FILE_TEMPLATE.format(provider=provider)
 
 
 def get_forecast_file_path(provider):
-    if provider not in {"weatherapi", "openweather"}:
+    if provider not in {"weatherapi", "openweather", "weathernews"}:
         raise RuntimeError(f"Unsupported WEATHER_PROVIDER for forecast file: {provider}")
     return FORECAST_FILE_TEMPLATE.format(provider=provider)
 
@@ -600,11 +605,92 @@ def fetch_openweather_forecast(location, reference_epoch):
     return forecast_records
 
 
+def geocode_location(location):
+    url = f"https://nominatim.openstreetmap.org/search?q={urllib.parse.quote(location)}&format=json&limit=1"
+    req = urllib.request.Request(url, headers={"User-Agent": "turing-weather-monitor"})
+    try:
+        payload = urllib.request.urlopen(req, timeout=10).read().decode("utf-8")
+        results = json.loads(payload)
+    except Exception as e:
+        raise RuntimeError(f"Failed to geocode location '{location}': {e}") from e
+    if not results:
+        raise RuntimeError(f"Geocoding found no results for '{location}'")
+    return results[0]["lat"], results[0]["lon"]
+
+
+def parse_weathernews_wind_dir(wnddir):
+    return float(wnddir) * 22.5
+
+
+def fetch_weathernews_data(location):
+    parts = location.split(",")
+    if len(parts) == 2:
+        lat, lon = parts[0].strip(), parts[1].strip()
+    else:
+        lat, lon = geocode_location(location)
+
+    url = f"https://site.weathernews.jp/lba/wxdata/api_data_ss1?lat={lat}&lon={lon}"
+    try:
+        payload = urllib.request.urlopen(url, timeout=10).read().decode("utf-8")
+        data = json.loads(payload)
+    except Exception as e:
+        raise RuntimeError(f"Failed to fetch weather data from Weathernews: {e}") from e
+    return data
+
+
+def fetch_weathernews_current(location):
+    data = fetch_weathernews_data(location)
+    try:
+        obs = data["observation"]
+        wx_code = obs["WX"]
+        return {
+            "observed_at": int(datetime.strptime(obs["ISSUE"], "%Y-%m-%dT%H:%M %Z").timestamp()),
+            "temp_c": float(obs["AIRTMP"]),
+            "feels_like_c": float(obs["AIRTMP"]),
+            "humidity": float(obs["RHUM"]),
+            "precip_mm": float(obs["PREC"]),
+            "pressure_hpa": float(obs["ARPRSS"]),
+            "icon_url": f"https://weathernews.jp/onebox/img/wxicon/{wx_code}.png",
+            "wind_speed_mps": float(obs["WNDSPD"]),
+            "wind_dir_deg": parse_weathernews_wind_dir(obs["WNDDIR"]),
+        }
+    except KeyError as e:
+        raise RuntimeError(f"Weathernews response is missing expected field: {e}") from e
+
+
+def fetch_weathernews_forecast(location, reference_epoch):
+    data = fetch_weathernews_data(location)
+    end_epoch = reference_epoch + HISTORY_WINDOW_SEC
+    forecast_records = []
+    try:
+        for hour in data["srf"]:
+            observed_at = int(hour["tm"])
+            if observed_at <= reference_epoch or observed_at > end_epoch:
+                continue
+            wx_code = hour["WX"]
+            forecast_records.append({
+                "observed_at": observed_at,
+                "temp_c": float(hour["AIRTMP"]),
+                "feels_like_c": float(hour["AIRTMP"]),
+                "humidity": float(hour["RHUM"]),
+                "precip_mm": float(hour["PREC"]),
+                "pressure_hpa": float(hour["ARPRSS"]),
+                "icon_url": f"https://weathernews.jp/onebox/img/wxicon/{wx_code}.png",
+                "wind_speed_mps": float(hour["WNDSPD"]),
+                "wind_dir_deg": parse_weathernews_wind_dir(hour["WNDDIR"]),
+            })
+    except KeyError as e:
+        raise RuntimeError(f"Weathernews forecast response is missing expected field: {e}") from e
+    return forecast_records
+
+
 def fetch_weather_record(provider, location):
     if provider == "weatherapi":
         return fetch_weatherapi_current(location)
     if provider == "openweather":
         return fetch_openweather_current(location)
+    if provider == "weathernews":
+        return fetch_weathernews_current(location)
     raise RuntimeError(f"Unsupported WEATHER_PROVIDER: {provider}")
 
 
@@ -613,6 +699,8 @@ def fetch_weather_forecast_records(provider, location, reference_epoch):
         return fetch_weatherapi_forecast(location, reference_epoch)
     if provider == "openweather":
         return fetch_openweather_forecast(location, reference_epoch)
+    if provider == "weathernews":
+        return fetch_weathernews_forecast(location, reference_epoch)
     raise RuntimeError(f"Unsupported WEATHER_PROVIDER: {provider}")
 
 
@@ -721,7 +809,7 @@ def main():
     parser = argparse.ArgumentParser(description="Weather forecast monitor for Turing Smart Screen")
     parser.add_argument("--snapshot", action="store_true", help="Save the current display image to PNG instead of sending it to the LCD")
     parser.add_argument("--landscape", action="store_true", help="Use normal landscape orientation instead of the default 180-degree rotated orientation")
-    parser.add_argument("--weather-provider", choices=["weatherapi", "openweather"], default=WEATHER_PROVIDER,
+    parser.add_argument("--weather-provider", choices=["weatherapi", "openweather", "weathernews"], default=WEATHER_PROVIDER,
                         help="Select the weather API provider")
     parser.add_argument("--location", default=WEATHER_LOCATION,
                         help="Set the weather query location")
