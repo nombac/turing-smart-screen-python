@@ -4,6 +4,7 @@ import json
 import os
 from io import BytesIO
 import time
+import urllib.parse
 import urllib.request
 from datetime import datetime, timedelta, timezone
 
@@ -27,7 +28,7 @@ FONT_PATH_SOURCE = "/System/Library/Fonts/Avenir Next.ttc"
 BRIGHTNESS = 25
 
 # === Weather Box Layout ===
-# 天気APIの切替: "weatherapi" または "openweather"
+# 天気APIの切替: "weatherapi" または "openweather" または "weathernews"
 # - weatherapi を使う場合は WEATHERAPI_KEY
 # - openweather を使う場合は OPENWEATHER_API_KEY
 WEATHER_PROVIDER = "weatherapi"
@@ -52,7 +53,7 @@ WEATHER_LINE2_Y = 50
 WEATHER_LINE3_Y = 82
 WEATHER_LINE4_Y = 114
 WEATHER_ICON_SIZE = 110
-WEATHER_ICON_X = 330
+WEATHER_ICON_X = 300
 WEATHER_ICON_Y = 30
 COLOR_WEATHER = (255, 195, 40)
 COLOR_SOURCE = (120, 120, 120)
@@ -106,6 +107,45 @@ WIND_DIR_JA = {
     "NW": "北西",
     "NNW": "北北西",
 }
+WEATHERNEWS_OBSERVATION_TEXT_EN = {
+    100: "Sunny",
+    200: "Cloudy",
+    300: "Rain",
+    400: "Snow",
+    430: "Sleet",
+    500: "Clear",
+    550: "Extremely Hot",
+    600: "Partly Cloudy",
+    650: "Light Rain",
+    850: "Heavy Rain/Storm",
+    950: "Heavy Snow",
+}
+WEATHERNEWS_OBSERVATION_TEXT_JA = {
+    100: "晴れ",
+    200: "くもり",
+    300: "雨",
+    400: "雪",
+    430: "みぞれ",
+    500: "快晴",
+    550: "猛暑",
+    600: "うすぐもり",
+    650: "小雨",
+    850: "大雨・嵐",
+    950: "大雪",
+}
+WEATHERNEWS_FEEL_LABEL_JA = {
+    1: "厳寒",
+    2: "寒い",
+    3: "ひんやり",
+    4: "快適",
+    5: "暖かい",
+    6: "暑い",
+    7: "乾いた暑さ",
+    8: "蒸し暑い",
+    9: "猛暑",
+    10: "酷暑",
+}
+JST = timezone(timedelta(hours=9))
 
 
 def dim(color):
@@ -241,13 +281,103 @@ def fetch_openweather_current(location):
     }
 
 
+def geocode_location(location):
+    url = f"https://nominatim.openstreetmap.org/search?q={urllib.parse.quote(location)}&format=json&limit=1"
+    req = urllib.request.Request(url, headers={"User-Agent": "turing-weather-clock"})
+    try:
+        payload = urllib.request.urlopen(req, timeout=10).read().decode("utf-8")
+        results = json.loads(payload)
+    except Exception as e:
+        raise RuntimeError(f"Failed to geocode location '{location}': {e}") from e
+    if not results:
+        raise RuntimeError(f"Geocoding found no results for '{location}'")
+    return results[0]["lat"], results[0]["lon"]
+
+
+def parse_weathernews_wind_dir(wnddir):
+    return float(wnddir) * 22.5
+
+
+def resolve_weathernews_observation_text(wx_code):
+    if WEATHER_TEXT_LANG == "ja":
+        text_map = WEATHERNEWS_OBSERVATION_TEXT_JA
+    elif WEATHER_TEXT_LANG == "en":
+        text_map = WEATHERNEWS_OBSERVATION_TEXT_EN
+    else:
+        raise RuntimeError(f"Unsupported WEATHER_TEXT_LANG for Weathernews: {WEATHER_TEXT_LANG}")
+    if wx_code not in text_map:
+        raise RuntimeError(f"Unsupported Weathernews observation WX code: {wx_code}")
+    return text_map[wx_code]
+
+
+def fetch_weathernews_data(location):
+    parts = location.split(",")
+    if len(parts) == 2:
+        lat, lon = parts[0].strip(), parts[1].strip()
+    else:
+        lat, lon = geocode_location(location)
+
+    url = f"https://site.weathernews.jp/lba/wxdata/api_data_ss1?lat={lat}&lon={lon}"
+    try:
+        payload = urllib.request.urlopen(url, timeout=10).read().decode("utf-8")
+        data = json.loads(payload)
+    except Exception as e:
+        raise RuntimeError(f"Failed to fetch weather data from Weathernews: {e}") from e
+    return data
+
+
+def fetch_weathernews_current(location):
+    data = fetch_weathernews_data(location)
+    try:
+        obs = data["observation"]
+        wx_code = int(obs["WX"])
+        observation_dt = datetime.strptime(obs["ISSUE"], "%Y-%m-%dT%H:%M %Z").replace(tzinfo=timezone.utc).astimezone(JST)
+        today_forecast = None
+        for daily in data["mrf"]:
+            daily_dt = datetime.fromtimestamp(int(daily["tm"]), tz=JST)
+            if daily_dt.date() == observation_dt.date():
+                today_forecast = daily
+                break
+        if today_forecast is None:
+            raise RuntimeError(f"Weathernews daily forecast is not available for {observation_dt.date().isoformat()}")
+
+        return {
+            "temp_c": float(obs["AIRTMP"]),
+            "feels_like_c": None,
+            "feel_index": int(obs["FEEL"]),
+            "humidity": int(obs["RHUM"]),
+            "precip_mm": float(obs["PREC"]),
+            "pressure_hpa": float(obs["ARPRSS"]),
+            "max_temp_c": float(today_forecast["MAXT"]),
+            "min_temp_c": float(today_forecast["MINT"]),
+            "condition_text": resolve_weathernews_observation_text(wx_code),
+            "wind_kph": float(obs["WNDSPD"]) * 3.6,
+            "wind_dir": wind_deg_to_dir(parse_weathernews_wind_dir(obs["WNDDIR"])),
+            "icon_url": f"https://weathernews.jp/onebox/img/wxicon/{wx_code}.png",
+            "observation_time_text": observation_dt.strftime("%H:%M"),
+        }
+    except KeyError as e:
+        raise RuntimeError(f"Weathernews response is missing expected field: {e}") from e
+
+
 def resolve_condition_text(provider, condition_text, precip_mm):
     return condition_text
 
 
-def resolve_temp_text(temp_c, feels_like_c, max_temp_c, min_temp_c, provider, temp_subinfo_mode):
+def resolve_temp_text(temp_c, feels_like_c, max_temp_c, min_temp_c, provider, temp_subinfo_mode, feel_index=None):
     temp_text = f"{temp_c:g}°C"
     if temp_subinfo_mode == "feels-like":
+        if provider == "weathernews":
+            if WEATHER_TEXT_LANG == "en":
+                return temp_text
+            if WEATHER_TEXT_LANG != "ja":
+                raise RuntimeError(f"Unsupported WEATHER_TEXT_LANG for Weathernews: {WEATHER_TEXT_LANG}")
+            if feel_index is None:
+                raise RuntimeError("Weathernews feel_index is missing")
+            feel_label = WEATHERNEWS_FEEL_LABEL_JA.get(feel_index)
+            if feel_label is None:
+                raise RuntimeError(f"Weathernews feel_index is out of range: {feel_index}")
+            return f"{temp_text}（{feel_label}）"
         if feels_like_c is None:
             raise RuntimeError("feels_like_c is missing")
         return f"{temp_text} (FL {feels_like_c:g}°C)"
@@ -292,8 +422,16 @@ def get_weather(weather_provider, location, temp_subinfo_mode):
         current = fetch_weatherapi_current(location)
     elif weather_provider == "openweather":
         current = fetch_openweather_current(location)
+    elif weather_provider == "weathernews":
+        current = fetch_weathernews_current(location)
     else:
         raise RuntimeError(f"Unsupported WEATHER_PROVIDER: {weather_provider}")
+
+    provider_name = {
+        "weatherapi": "WeatherAPI",
+        "openweather": "OpenWeather",
+        "weathernews": "Weathernews",
+    }[weather_provider]
 
     return {
         "temp_text": resolve_temp_text(
@@ -303,6 +441,7 @@ def get_weather(weather_provider, location, temp_subinfo_mode):
             current["min_temp_c"],
             weather_provider,
             temp_subinfo_mode,
+            current.get("feel_index"),
         ),
         "condition_text": resolve_condition_text(
             weather_provider,
@@ -312,7 +451,7 @@ def get_weather(weather_provider, location, temp_subinfo_mode):
         "precip_text": resolve_precip_pressure_text(current["precip_mm"], current["pressure_hpa"]),
         "wind_text": resolve_wind_text(current["wind_kph"], current["wind_dir"], current["humidity"]),
         "icon_url": current["icon_url"],
-        "source_text": f"{location} {current['observation_time_text']} ({'WeatherAPI' if weather_provider == 'weatherapi' else 'OpenWeather'})",
+        "source_text": f"{location} {current['observation_time_text']} ({provider_name})",
     }
 
 
@@ -320,7 +459,9 @@ def fetch_weather_icon(icon_url):
     try:
         raw = urllib.request.urlopen(icon_url, timeout=10).read()
         png = Image.open(BytesIO(raw)).convert("RGBA")
-        return png.resize((WEATHER_ICON_SIZE, WEATHER_ICON_SIZE), Image.Resampling.LANCZOS)
+        w, h = png.size
+        scale = WEATHER_ICON_SIZE / max(w, h)
+        return png.resize((round(w * scale), round(h * scale)), Image.Resampling.LANCZOS)
     except Exception as e:
         raise RuntimeError(f"Failed to fetch weather icon: {e}") from e
 
@@ -453,7 +594,7 @@ def main():
     parser.add_argument("--snapshot", action="store_true", help="Save the current display image to PNG instead of sending it to the LCD")
     parser.add_argument("--landscape", action="store_true", help="Use normal landscape orientation instead of the default 180-degree rotated orientation")
     parser.add_argument("--exclude-weather", action="store_true", help="Hide the weather block and run as a clock without weather API access")
-    parser.add_argument("--weather-provider", choices=["weatherapi", "openweather"], default=WEATHER_PROVIDER,
+    parser.add_argument("--weather-provider", choices=["weatherapi", "openweather", "weathernews"], default=WEATHER_PROVIDER,
                         help="Select the weather API provider")
     parser.add_argument("--location", default=WEATHERAPI_LOCATION,
                         help="Set the weather query location")
@@ -463,6 +604,10 @@ def main():
                         help="Set both weather text and date language")
     parser.add_argument("--brightness", type=parse_brightness, default=BRIGHTNESS,
                         help="Set LCD brightness from 0 to 100")
+    parser.add_argument("--port", default="AUTO",
+                        help="Serial port of the LCD (e.g. /dev/tty.usbserial-XXXX). Defaults to AUTO detection.")
+    parser.add_argument("--no-reset", action="store_true",
+                        help="Skip the display reset on startup (useful when the port changes after reset)")
     args = parser.parse_args()
 
     WEATHER_TEXT_LANG = args.lang
@@ -496,8 +641,9 @@ def main():
             save_snapshot((font_source, font_weather_bold, font_weather), font_date, font_large, font_seconds, weather, now)
         return
 
-    lcd = LcdCommRevA()
-    lcd.Reset()
+    lcd = LcdCommRevA(com_port=args.port)
+    if not args.no_reset:
+        lcd.Reset()
     lcd.InitializeComm()
     lcd.ScreenOn()
     lcd.SetBrightness(args.brightness)

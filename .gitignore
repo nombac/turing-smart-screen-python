@@ -142,3 +142,7 @@ tmp
 
 external/LibreHardwareMonitor/LibreHardwareMonitorLib.sys
 obsolete/
+
+# Google OAuth credentials
+credentials.json
+token.json

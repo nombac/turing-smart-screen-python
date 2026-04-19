@@ -6,7 +6,7 @@ import os
 import time
 import urllib.parse
 import urllib.request
-from datetime import datetime
+from datetime import datetime, timezone
 from io import BytesIO
 
 from PIL import Image, ImageDraw, ImageFont
@@ -476,7 +476,7 @@ def fetch_weatherapi_current(location):
 
     try:
         return {
-            "observed_at": int(data["current"]["last_updated_epoch"]),
+            "observed_at": int(time.time()),
             "temp_c": float(data["current"]["temp_c"]),
             "feels_like_c": float(data["current"]["feelslike_c"]),
             "humidity": float(data["current"]["humidity"]),
@@ -644,7 +644,7 @@ def fetch_weathernews_current(location):
         obs = data["observation"]
         wx_code = obs["WX"]
         return {
-            "observed_at": int(datetime.strptime(obs["ISSUE"], "%Y-%m-%dT%H:%M %Z").timestamp()),
+            "observed_at": int(datetime.strptime(obs["ISSUE"], "%Y-%m-%dT%H:%M %Z").replace(tzinfo=timezone.utc).timestamp()),
             "temp_c": float(obs["AIRTMP"]),
             "feels_like_c": float(obs["AIRTMP"]),
             "humidity": float(obs["RHUM"]),
@@ -815,6 +815,12 @@ def main():
                         help="Set the weather query location")
     parser.add_argument("--brightness", type=parse_brightness, default=BRIGHTNESS,
                         help="Set LCD brightness from 0 to 100")
+    parser.add_argument("--port", default="AUTO",
+                        help="Serial port of the LCD (e.g. /dev/tty.usbserial-XXXX). Defaults to AUTO detection.")
+    parser.add_argument("--no-reset", action="store_true",
+                        help="Skip the display reset on startup (useful when the port changes after reset)")
+    parser.add_argument("--no-fetch-history", action="store_true",
+                        help="Skip fetching current weather observation (use when turing_weather_history_collector.py is running)")
     args = parser.parse_args()
     history_file_path = get_history_file_path(args.weather_provider)
     forecast_file_path = get_forecast_file_path(args.weather_provider)
@@ -827,7 +833,8 @@ def main():
     font_info_meta = ImageFont.truetype(FONT_PATH, FONT_SIZE_INFO_META)
 
     records = load_history(history_file_path)
-    records = update_history(records, history_file_path, args.weather_provider, args.location)
+    if not args.no_fetch_history:
+        records = update_history(records, history_file_path, args.weather_provider, args.location)
     forecast_records = update_forecast(forecast_file_path, args.weather_provider, args.location, reference_epoch)
     panels = build_all_panels(
         font_header, font_axis, font_info_date, font_info_time, font_info_meta, records, forecast_records, args.location, args.weather_provider, reference_epoch
@@ -842,8 +849,9 @@ def main():
         print(f"Saved snapshot to {output_path}")
         return
 
-    lcd = LcdCommRevA()
-    lcd.Reset()
+    lcd = LcdCommRevA(com_port=args.port)
+    if not args.no_reset:
+        lcd.Reset()
     lcd.InitializeComm()
     lcd.ScreenOn()
     lcd.SetBrightness(args.brightness)
@@ -871,7 +879,8 @@ def main():
             if time.time() - last_weather_fetch >= WEATHER_UPDATE_MIN * 60:
                 reference_epoch = int(time.time())
                 records = load_history(history_file_path)
-                records = update_history(records, history_file_path, args.weather_provider, args.location)
+                if not args.no_fetch_history:
+                    records = update_history(records, history_file_path, args.weather_provider, args.location)
                 forecast_records = update_forecast(forecast_file_path, args.weather_provider, args.location, reference_epoch)
                 panels = build_all_panels(
                     font_header, font_axis, font_info_date, font_info_time, font_info_meta, records, forecast_records, args.location, args.weather_provider, reference_epoch
