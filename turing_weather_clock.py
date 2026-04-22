@@ -339,7 +339,9 @@ def fetch_weathernews_current(location):
                 today_forecast = daily
                 break
         if today_forecast is None:
-            raise RuntimeError(f"Weathernews daily forecast is not available for {observation_dt.date().isoformat()}")
+            if not data["mrf"]:
+                raise RuntimeError(f"Weathernews daily forecast is not available for {observation_dt.date().isoformat()}")
+            today_forecast = data["mrf"][0]
 
         return {
             "temp_c": float(obs["AIRTMP"]),
@@ -606,8 +608,8 @@ def main():
                         help="Set LCD brightness from 0 to 100")
     parser.add_argument("--port", default="AUTO",
                         help="Serial port of the LCD (e.g. /dev/tty.usbserial-XXXX). Defaults to AUTO detection.")
-    parser.add_argument("--no-reset", action="store_true",
-                        help="Skip the display reset on startup (useful when the port changes after reset)")
+    parser.add_argument("--reset", action="store_true",
+                        help="Reset the display on startup")
     args = parser.parse_args()
 
     WEATHER_TEXT_LANG = args.lang
@@ -642,7 +644,7 @@ def main():
         return
 
     lcd = LcdCommRevA(com_port=args.port)
-    if not args.no_reset:
+    if args.reset:
         lcd.Reset()
     lcd.InitializeComm()
     lcd.ScreenOn()
