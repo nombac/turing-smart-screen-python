@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 import argparse
+import re
+import subprocess
+import threading
 import time
 from collections import deque
 
@@ -38,6 +41,8 @@ COLOR_DISK = (255, 110, 110)
 COLOR_DISK_FILL = (90, 30, 30)
 COLOR_NETWORK = (180, 220, 255)
 COLOR_NETWORK_FILL = (45, 55, 70)
+COLOR_GPU = (200, 150, 255)
+COLOR_GPU_FILL = (65, 40, 85)
 
 DISK_MAX_BPS = 1_000_000_000.0
 NETWORK_MAX_BPS = 50_000_000.0
@@ -154,8 +159,49 @@ def format_rate(bytes_per_sec):
     return f"{bytes_per_sec:.0f} B/s"
 
 
-class MetricsHistory:
+class GpuSampler:
     def __init__(self):
+        self._latest = 0.0
+        self._lock = threading.Lock()
+        self._ready = threading.Event()
+        self._error = None
+        threading.Thread(target=self._loop, daemon=True).start()
+        if not self._ready.wait(timeout=5.0):
+            raise RuntimeError("powermetrics timed out on first sample")
+        if self._error:
+            raise RuntimeError(f"GPU sampling failed: {self._error}")
+
+    def _loop(self):
+        while True:
+            try:
+                result = subprocess.run(
+                    ["powermetrics", "--samplers", "gpu_power", "-i", "1000", "-n", "1"],
+                    capture_output=True, text=True, timeout=5,
+                )
+            except Exception as e:
+                self._error = str(e)
+                self._ready.set()
+                return
+            if result.returncode != 0:
+                self._error = result.stderr.strip() or f"exit {result.returncode}"
+                self._ready.set()
+                return
+            m = re.search(r"GPU HW active residency:\s+([\d.]+)%", result.stdout)
+            if not m:
+                self._error = f"GPU HW active residency not found in powermetrics output"
+                self._ready.set()
+                return
+            with self._lock:
+                self._latest = float(m.group(1))
+            self._ready.set()
+
+    def get(self):
+        with self._lock:
+            return self._latest
+
+
+class MetricsHistory:
+    def __init__(self, include_gpu=False):
         self.cpu_history = deque(maxlen=HISTORY_LEN)
         self.memory_history = deque(maxlen=HISTORY_LEN)
         self.disk_read_history = deque(maxlen=HISTORY_LEN)
@@ -164,6 +210,8 @@ class MetricsHistory:
         self.net_rx_history = deque(maxlen=HISTORY_LEN)
         self.net_tx_history = deque(maxlen=HISTORY_LEN)
         self.net_total_history = deque(maxlen=HISTORY_LEN)
+        self.gpu_history = deque(maxlen=HISTORY_LEN) if include_gpu else None
+        self._gpu_sampler = GpuSampler() if include_gpu else None
         self._prev_disk = psutil.disk_io_counters()
         self._prev_net = psutil.net_io_counters()
         self._prev_time = time.monotonic()
@@ -206,6 +254,9 @@ class MetricsHistory:
             self.net_total_history.append(0.0)
         self._prev_net = net
 
+        if self._gpu_sampler is not None:
+            self.gpu_history.append(self._gpu_sampler.get())
+
 
 def build_metric_panel(metric_name, font_label, metrics):
     if metric_name == "cpu":
@@ -218,6 +269,9 @@ def build_metric_panel(metric_name, font_label, metrics):
         return build_disk_stable_panel(font_label, metrics.disk_total_history)
     if metric_name == "network":
         return build_network_stable_panel(font_label, metrics.net_total_history)
+    if metric_name == "gpu":
+        current = metrics.gpu_history[-1] if metrics.gpu_history else 0.0
+        return build_percent_panel(font_label, "GPU", f"{current:.0f}%", metrics.gpu_history, COLOR_GPU, COLOR_GPU_FILL)
     raise RuntimeError(f"Unsupported metric: {metric_name}")
 
 
@@ -225,43 +279,32 @@ def main():
     parser = argparse.ArgumentParser(description="System monitor for Turing Smart Screen")
     parser.add_argument("--snapshot", action="store_true", help="Save the current display image to PNG instead of sending it to the LCD")
     parser.add_argument("--landscape", action="store_true", help="Use normal landscape orientation instead of the default 180-degree rotated orientation")
-    parser.add_argument("--top-left", choices=["cpu", "memory", "disk", "network"])
-    parser.add_argument("--top-right", choices=["cpu", "memory", "disk", "network"])
-    parser.add_argument("--bottom-left", choices=["cpu", "memory", "disk", "network"])
-    parser.add_argument("--bottom-right", choices=["cpu", "memory", "disk", "network"])
+    parser.add_argument("--top-left", choices=["cpu", "gpu", "memory", "disk", "network"])
+    parser.add_argument("--top-right", choices=["cpu", "gpu", "memory", "disk", "network"])
+    parser.add_argument("--bottom-left", choices=["cpu", "gpu", "memory", "disk", "network"])
+    parser.add_argument("--bottom-right", choices=["cpu", "gpu", "memory", "disk", "network"])
     parser.add_argument("--brightness", type=parse_brightness, default=BRIGHTNESS,
                         help="Set LCD brightness from 0 to 100")
+    parser.add_argument("--port", default="AUTO",
+                        help="Serial port of the LCD (e.g. /dev/tty.usbserial-XXXX). Defaults to AUTO detection.")
+    parser.add_argument("--reset", action="store_true",
+                        help="Reset the display on startup")
     args = parser.parse_args()
 
+    include_gpu = "gpu" in {args.top_left, args.top_right, args.bottom_left, args.bottom_right}
     font_label = ImageFont.truetype(FONT_PATH, 24)
-    metrics = MetricsHistory()
+    metrics = MetricsHistory(include_gpu=include_gpu)
 
     for _ in range(3):
         metrics.sample()
         time.sleep(0.1)
 
-    any_specified = any(
-        metric is not None
-        for metric in (args.top_left, args.top_right, args.bottom_left, args.bottom_right)
-    )
-
-    placements = []
-    if any_specified:
-        if args.top_left is not None:
-            placements.append((args.top_left, POS_TOP_LEFT))
-        if args.top_right is not None:
-            placements.append((args.top_right, POS_TOP_RIGHT))
-        if args.bottom_left is not None:
-            placements.append((args.bottom_left, POS_BOTTOM_LEFT))
-        if args.bottom_right is not None:
-            placements.append((args.bottom_right, POS_BOTTOM_RIGHT))
-    else:
-        placements = [
-            ("cpu", POS_TOP_LEFT),
-            ("memory", POS_TOP_RIGHT),
-            ("disk", POS_BOTTOM_LEFT),
-            ("network", POS_BOTTOM_RIGHT),
-        ]
+    placements = [
+        (args.top_left or "cpu", POS_TOP_LEFT),
+        (args.top_right or "memory", POS_TOP_RIGHT),
+        (args.bottom_left or "disk", POS_BOTTOM_LEFT),
+        (args.bottom_right or "network", POS_BOTTOM_RIGHT),
+    ]
 
     if args.snapshot:
         canvas = build_canvas(DISPLAY_W, DISPLAY_H)
@@ -272,8 +315,9 @@ def main():
         print(f"Saved snapshot to {output_path}")
         return
 
-    lcd = LcdCommRevA()
-    lcd.Reset()
+    lcd = LcdCommRevA(com_port=args.port)
+    if args.reset:
+        lcd.Reset()
     lcd.InitializeComm()
     lcd.ScreenOn()
     lcd.SetBrightness(args.brightness)
