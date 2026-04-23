@@ -676,6 +676,7 @@ def main():
     last_weather = time.time()
     last_day = time.localtime().tm_yday
     last_second = now.tm_sec
+    last_minute = now.tm_min
     try:
         while True:
             if not args.exclude_weather and time.time() - last_weather > WEATHER_UPDATE_MIN * 60:
@@ -703,8 +704,9 @@ def main():
                     x=get_time_seconds_x(current_time_main_box),
                     y=TIME_SECONDS_Y,
                 )
-                if now.tm_sec == 0:
+                if now.tm_min != last_minute:
                     lcd.DisplayPILImage(current_time_main_box, x=TIME_X, y=TIME_Y)
+                    last_minute = now.tm_min
                 last_second = now.tm_sec
 
             time.sleep(UPDATE_INTERVAL_SEC)
