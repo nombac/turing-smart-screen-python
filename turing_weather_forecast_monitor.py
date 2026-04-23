@@ -817,8 +817,8 @@ def main():
                         help="Set LCD brightness from 0 to 100")
     parser.add_argument("--port", default="AUTO",
                         help="Serial port of the LCD (e.g. /dev/tty.usbserial-XXXX). Defaults to AUTO detection.")
-    parser.add_argument("--no-reset", action="store_true",
-                        help="Skip the display reset on startup (useful when the port changes after reset)")
+    parser.add_argument("--reset", action="store_true",
+                        help="Reset the display on startup")
     parser.add_argument("--no-fetch-history", action="store_true",
                         help="Skip fetching current weather observation (use when turing_weather_history_collector.py is running)")
     args = parser.parse_args()
@@ -850,7 +850,7 @@ def main():
         return
 
     lcd = LcdCommRevA(com_port=args.port)
-    if not args.no_reset:
+    if args.reset:
         lcd.Reset()
     lcd.InitializeComm()
     lcd.ScreenOn()
