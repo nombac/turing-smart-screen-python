@@ -35,59 +35,34 @@ OpenWeather を使う場合:
 export OPENWEATHER_API_KEY='YOUR_OPENWEATHER_API_KEY'
 ```
 
-3. スクリプトを実行します。
+3. `make clock` で起動します。
 
 ```bash
-python3 turing_weather_clock.py
+make clock
 ```
 
-OpenWeather を使いたい場合:
+Makefile 変数でオプションを上書きできます。
 
 ```bash
-python3 turing_weather_clock.py --weather-provider openweather
+make clock WEATHER_PROVIDER=openweather
+make clock LOCATION=Tokyo CLOCK_LANG=ja
+make clock SNAPSHOT=1
+make clock BRIGHTNESS=40 RESET=1
+make clock EXCLUDE_WEATHER=1
 ```
 
-場所を指定したい場合:
-
-```bash
-python3 turing_weather_clock.py --location Tokyo
-```
-
-日本語表示にしたい場合:
-
-```bash
-python3 turing_weather_clock.py --lang ja
-```
-
-通常向きの `LANDSCAPE` で表示したい場合:
-
-```bash
-python3 turing_weather_clock.py --landscape
-```
-
-PNG スナップショットだけを保存したい場合:
-
-```bash
-python3 turing_weather_clock.py --snapshot
-```
-
-通常向きで表示したい場合:
-
-```bash
-python3 turing_weather_clock.py --landscape
-```
-
-天気 API を使わず、時計と日付だけ表示したい場合:
-
-```bash
-python3 turing_weather_clock.py --exclude-weather
-```
-
-起動時に明るさを指定したい場合:
-
-```bash
-python3 turing_weather_clock.py --brightness 40
-```
+| 変数 | オプション | 既定値 |
+|---|---|---|
+| `PORT` | `--port` | `AUTO` |
+| `BRIGHTNESS` | `--brightness` | `25` |
+| `LANDSCAPE=1` | `--landscape` | — |
+| `RESET=1` | `--reset` | — |
+| `SNAPSHOT=1` | `--snapshot` | — |
+| `WEATHER_PROVIDER` | `--weather-provider` | `weatherapi` |
+| `LOCATION` | `--location` | スクリプト既定値 |
+| `EXCLUDE_WEATHER=1` | `--exclude-weather` | — |
+| `TEMP_SUBINFO` | `--temp-subinfo` | スクリプト既定値 |
+| `CLOCK_LANG` | `--lang` | スクリプト既定値 |
 
 ### 設定パラメタ
 
@@ -331,59 +306,34 @@ For OpenWeather:
 export OPENWEATHER_API_KEY='YOUR_OPENWEATHER_API_KEY'
 ```
 
-3. Run the script.
+3. Run with `make clock`.
 
 ```bash
-python3 turing_weather_clock.py
+make clock
 ```
 
-If you want to use OpenWeather instead:
+Override options with Makefile variables.
 
 ```bash
-python3 turing_weather_clock.py --weather-provider openweather
+make clock WEATHER_PROVIDER=openweather
+make clock LOCATION=Tokyo CLOCK_LANG=ja
+make clock SNAPSHOT=1
+make clock BRIGHTNESS=40 RESET=1
+make clock EXCLUDE_WEATHER=1
 ```
 
-If you want to override the weather location:
-
-```bash
-python3 turing_weather_clock.py --location Tokyo
-```
-
-If you want Japanese weather text and date formatting:
-
-```bash
-python3 turing_weather_clock.py --lang ja
-```
-
-If you want normal `LANDSCAPE` orientation:
-
-```bash
-python3 turing_weather_clock.py --landscape
-```
-
-If you want to save a PNG snapshot instead of sending to the LCD:
-
-```bash
-python3 turing_weather_clock.py --snapshot
-```
-
-If you want normal `LANDSCAPE` orientation:
-
-```bash
-python3 turing_weather_clock.py --landscape
-```
-
-If you want to use it as a clock without any weather API access:
-
-```bash
-python3 turing_weather_clock.py --exclude-weather
-```
-
-If you want to set brightness at startup:
-
-```bash
-python3 turing_weather_clock.py --brightness 40
-```
+| Variable | Option | Default |
+|---|---|---|
+| `PORT` | `--port` | `AUTO` |
+| `BRIGHTNESS` | `--brightness` | `25` |
+| `LANDSCAPE=1` | `--landscape` | — |
+| `RESET=1` | `--reset` | — |
+| `SNAPSHOT=1` | `--snapshot` | — |
+| `WEATHER_PROVIDER` | `--weather-provider` | `weatherapi` |
+| `LOCATION` | `--location` | script default |
+| `EXCLUDE_WEATHER=1` | `--exclude-weather` | — |
+| `TEMP_SUBINFO` | `--temp-subinfo` | script default |
+| `CLOCK_LANG` | `--lang` | script default |
 
 ### Configurable Parameters
 

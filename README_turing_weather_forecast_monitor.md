@@ -36,47 +36,33 @@ export OPENWEATHER_API_KEY='YOUR_OPENWEATHER_API_KEY'
 
 Weathernews を使う場合は API キー不要です。
 
-3. スクリプトを実行します。
+3. `make forecast` で起動します。
 
 ```bash
-python3 turing_weather_forecast_monitor.py
+make forecast
 ```
 
-OpenWeather を使う場合:
+Makefile 変数でオプションを上書きできます。
 
 ```bash
-python3 turing_weather_forecast_monitor.py --weather-provider openweather
+make forecast WEATHER_PROVIDER=openweather
+make forecast WEATHER_PROVIDER=weathernews
+make forecast LOCATION=Tokyo
+make forecast SNAPSHOT=1
+make forecast BRIGHTNESS=40 RESET=1
+make forecast NO_FETCH_HISTORY=1
 ```
 
-Weathernews を使う場合:
-
-```bash
-python3 turing_weather_forecast_monitor.py --weather-provider weathernews
-```
-
-場所を指定したい場合:
-
-```bash
-python3 turing_weather_forecast_monitor.py --location Tokyo
-```
-
-通常向きの `LANDSCAPE` で表示したい場合:
-
-```bash
-python3 turing_weather_forecast_monitor.py --landscape
-```
-
-PNG スナップショットだけを保存したい場合:
-
-```bash
-python3 turing_weather_forecast_monitor.py --snapshot
-```
-
-起動時に明るさを指定したい場合:
-
-```bash
-python3 turing_weather_forecast_monitor.py --brightness 40
-```
+| 変数 | オプション | 既定値 |
+|---|---|---|
+| `PORT` | `--port` | `AUTO` |
+| `BRIGHTNESS` | `--brightness` | `25` |
+| `LANDSCAPE=1` | `--landscape` | — |
+| `RESET=1` | `--reset` | — |
+| `SNAPSHOT=1` | `--snapshot` | — |
+| `WEATHER_PROVIDER` | `--weather-provider` | `weatherapi` |
+| `LOCATION` | `--location` | スクリプト既定値 |
+| `NO_FETCH_HISTORY=1` | `--no-fetch-history` | — |
 
 ### コマンドラインオプション
 
@@ -225,47 +211,33 @@ export OPENWEATHER_API_KEY='YOUR_OPENWEATHER_API_KEY'
 
 For Weathernews, no API key is required.
 
-3. Run the script.
+3. Run with `make forecast`.
 
 ```bash
-python3 turing_weather_forecast_monitor.py
+make forecast
 ```
 
-To use OpenWeather:
+Override options with Makefile variables.
 
 ```bash
-python3 turing_weather_forecast_monitor.py --weather-provider openweather
+make forecast WEATHER_PROVIDER=openweather
+make forecast WEATHER_PROVIDER=weathernews
+make forecast LOCATION=Tokyo
+make forecast SNAPSHOT=1
+make forecast BRIGHTNESS=40 RESET=1
+make forecast NO_FETCH_HISTORY=1
 ```
 
-To use Weathernews:
-
-```bash
-python3 turing_weather_forecast_monitor.py --weather-provider weathernews
-```
-
-To set a location:
-
-```bash
-python3 turing_weather_forecast_monitor.py --location Tokyo
-```
-
-To use normal `LANDSCAPE` orientation:
-
-```bash
-python3 turing_weather_forecast_monitor.py --landscape
-```
-
-To save only a PNG snapshot:
-
-```bash
-python3 turing_weather_forecast_monitor.py --snapshot
-```
-
-To set brightness at startup:
-
-```bash
-python3 turing_weather_forecast_monitor.py --brightness 40
-```
+| Variable | Option | Default |
+|---|---|---|
+| `PORT` | `--port` | `AUTO` |
+| `BRIGHTNESS` | `--brightness` | `25` |
+| `LANDSCAPE=1` | `--landscape` | — |
+| `RESET=1` | `--reset` | — |
+| `SNAPSHOT=1` | `--snapshot` | — |
+| `WEATHER_PROVIDER` | `--weather-provider` | `weatherapi` |
+| `LOCATION` | `--location` | script default |
+| `NO_FETCH_HISTORY=1` | `--no-fetch-history` | — |
 
 ### Command-line options
 

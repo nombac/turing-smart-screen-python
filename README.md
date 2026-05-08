@@ -4,6 +4,8 @@
 
 This fork includes macOS Rev.A display fixes, a custom weather clock example, a custom quadrant-based system monitor example, and a custom weather forecast monitor example.
 
+A `Makefile` is provided to start each script with named variables instead of long command-line flags.
+
 See [README_turing_weather_clock.md](./README_turing_weather_clock.md), [README_turing_system_monitor.md](./README_turing_system_monitor.md), and [README_turing_weather_forecast_monitor.md](./README_turing_weather_forecast_monitor.md) for details.
 
 > **Note:** Blue-toned colors are known to occasionally cause display crashes on Rev.A hardware. If you experience crashes, try changing the color to white `(255, 255, 255)` first to confirm, then adjust from there.

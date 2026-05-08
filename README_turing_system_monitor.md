@@ -17,10 +17,10 @@
 python3 -m pip install pillow pyserial psutil
 ```
 
-2. スクリプトを実行します。
+2. `make sysmon` で起動します。
 
 ```bash
-python3 turing_system_monitor.py
+make sysmon
 ```
 
 デフォルトでは次の 4 枠を表示します。
@@ -30,30 +30,25 @@ python3 turing_system_monitor.py
 - 左下: `disk`
 - 右下: `network`
 
-通常向きの `LANDSCAPE` で表示したい場合:
+Makefile 変数でオプションを上書きできます。
 
 ```bash
-python3 turing_system_monitor.py --landscape
+make sysmon TOP_LEFT=gpu TOP_RIGHT=cpu
+make sysmon SNAPSHOT=1
+make sysmon BRIGHTNESS=40 RESET=1
 ```
 
-PNG スナップショットだけを保存したい場合:
-
-```bash
-python3 turing_system_monitor.py --snapshot
-```
-
-一部の枠だけ表示したい場合:
-
-```bash
-python3 turing_system_monitor.py --top-left cpu
-python3 turing_system_monitor.py --top-right memory --bottom-left disk
-```
-
-起動時に明るさを指定したい場合:
-
-```bash
-python3 turing_system_monitor.py --brightness 40
-```
+| 変数 | オプション | 既定値 |
+|---|---|---|
+| `PORT` | `--port` | `AUTO` |
+| `BRIGHTNESS` | `--brightness` | `25` |
+| `LANDSCAPE=1` | `--landscape` | — |
+| `RESET=1` | `--reset` | — |
+| `SNAPSHOT=1` | `--snapshot` | — |
+| `TOP_LEFT` | `--top-left` | `cpu` |
+| `TOP_RIGHT` | `--top-right` | `memory` |
+| `BOTTOM_LEFT` | `--bottom-left` | `disk` |
+| `BOTTOM_RIGHT` | `--bottom-right` | `network` |
 
 ### コマンドラインオプション
 
@@ -184,10 +179,10 @@ The current parameter values are tuned for the 3.5-inch display.
 python3 -m pip install pillow pyserial psutil
 ```
 
-2. Run the script.
+2. Run with `make sysmon`.
 
 ```bash
-python3 turing_system_monitor.py
+make sysmon
 ```
 
 The default layout is:
@@ -197,30 +192,25 @@ The default layout is:
 - Bottom-left: `disk`
 - Bottom-right: `network`
 
-To use normal `LANDSCAPE` orientation:
+Override options with Makefile variables.
 
 ```bash
-python3 turing_system_monitor.py --landscape
+make sysmon TOP_LEFT=gpu TOP_RIGHT=cpu
+make sysmon SNAPSHOT=1
+make sysmon BRIGHTNESS=40 RESET=1
 ```
 
-To save only a PNG snapshot:
-
-```bash
-python3 turing_system_monitor.py --snapshot
-```
-
-To display only selected quadrants:
-
-```bash
-python3 turing_system_monitor.py --top-left cpu
-python3 turing_system_monitor.py --top-right memory --bottom-left disk
-```
-
-To set brightness at startup:
-
-```bash
-python3 turing_system_monitor.py --brightness 40
-```
+| Variable | Option | Default |
+|---|---|---|
+| `PORT` | `--port` | `AUTO` |
+| `BRIGHTNESS` | `--brightness` | `25` |
+| `LANDSCAPE=1` | `--landscape` | — |
+| `RESET=1` | `--reset` | — |
+| `SNAPSHOT=1` | `--snapshot` | — |
+| `TOP_LEFT` | `--top-left` | `cpu` |
+| `TOP_RIGHT` | `--top-right` | `memory` |
+| `BOTTOM_LEFT` | `--bottom-left` | `disk` |
+| `BOTTOM_RIGHT` | `--bottom-right` | `network` |
 
 ### Command-line options
 
