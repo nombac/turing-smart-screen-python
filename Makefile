@@ -12,7 +12,7 @@ LOCATION         ?=
 # --- clock固有 ---
 EXCLUDE_WEATHER ?=
 TEMP_SUBINFO    ?=
-LANG            ?=
+CLOCK_LANG      ?=
 
 # --- forecast固有 ---
 NO_FETCH_HISTORY ?=
@@ -34,7 +34,7 @@ _WEATHER  = --weather-provider $(WEATHER_PROVIDER) \
 
 _CLOCK    = $(if $(EXCLUDE_WEATHER),--exclude-weather) \
             $(if $(TEMP_SUBINFO),--temp-subinfo $(TEMP_SUBINFO)) \
-            $(if $(LANG),--lang $(LANG))
+            $(if $(CLOCK_LANG),--lang $(CLOCK_LANG))
 
 _FORECAST = $(if $(NO_FETCH_HISTORY),--no-fetch-history)
 
