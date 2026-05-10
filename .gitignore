@@ -146,3 +146,7 @@ obsolete/
 # Google OAuth credentials
 credentials.json
 token.json
+.aider*
+
+# Weather history/forecast data files
+turing_weather_*.jsonl
