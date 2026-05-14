@@ -61,6 +61,7 @@ COLOR_RAIN = (210, 230, 255)
 COLOR_RAIN_FILL = (95, 95, 95)
 COLOR_PRESSURE = (255, 110, 110)
 COLOR_PRESSURE_FILL = (90, 30, 30)
+COLOR_WIND_FORECAST = (60, 45, 75)
 COLOR_WIND = (110, 85, 130)
 COLOR_WIND_LATEST = (225, 150, 255)
 
@@ -339,7 +340,7 @@ def build_info_panel_with_icon(font_date, font_time, font_meta, display_epoch, l
     return panel
 
 
-def build_wind_panel(font_header, font_cardinal, records):
+def build_wind_panel(font_header, font_cardinal, records, forecast_records):
     if not records:
         raise RuntimeError("No weather history records are available")
 
@@ -395,6 +396,22 @@ def build_wind_panel(font_header, font_cardinal, records):
 
     if not visible_records:
         return panel
+
+    forecast_visible = [r for r in forecast_records if r["observed_at"] > latest_observed_at]
+    if len(forecast_visible) > DISPLAY_POINT_COUNT:
+        sampled = []
+        for index in range(DISPLAY_POINT_COUNT):
+            src = int(index * (len(forecast_visible) - 1) / (DISPLAY_POINT_COUNT - 1))
+            sampled.append(forecast_visible[src])
+        forecast_visible = sampled
+    for record in forecast_visible:
+        speed = float(record["wind_speed_mps"])
+        direction = float(record["wind_dir_deg"])
+        length = radius * min(max(speed, 0.0), 15.0) / 15.0
+        rad = math.radians(direction)
+        dx = length * math.sin(rad)
+        dy = length * math.cos(rad)
+        draw.line([(center_x, center_y), (center_x + dx, center_y + dy)], fill=COLOR_WIND_FORECAST, width=1)
 
     for index, record in enumerate(visible_records):
         speed = float(record["wind_speed_mps"])
@@ -796,7 +813,7 @@ def build_all_panels(font_header, font_cardinal, font_info_date, font_info_time,
             font_header, font_cardinal, "Humid", format_percent(current["humidity"]), records, forecast_records, "humidity",
             HUMIDITY_MIN, HUMIDITY_MAX, COLOR_HUMIDITY, COLOR_HUMIDITY_FILL, reference_epoch, axis_labels=(f"{HUMIDITY_MIN:.0f}", f"{(HUMIDITY_MIN + HUMIDITY_MAX) / 2:.0f}", f"{HUMIDITY_MAX:.0f}")
         ),
-        POS_BOTTOM_MIDDLE: build_wind_panel(font_header, font_cardinal, records),
+        POS_BOTTOM_MIDDLE: build_wind_panel(font_header, font_cardinal, records, forecast_records),
         POS_BOTTOM_RIGHT: build_graph_panel_with_forecast(
             font_header, font_cardinal, "Press", format_pressure(current["pressure_hpa"]), records, forecast_records, "pressure_hpa",
             PRESSURE_MIN, PRESSURE_MAX, COLOR_PRESSURE, COLOR_PRESSURE_FILL, reference_epoch, axis_labels=(f"{PRESSURE_MIN:.0f}", f"{(PRESSURE_MIN + PRESSURE_MAX) / 2:.0f}", f"{PRESSURE_MAX:.0f}")
@@ -834,8 +851,15 @@ def main():
 
     records = load_history(history_file_path)
     if not args.no_fetch_history:
-        records = update_history(records, history_file_path, args.weather_provider, args.location)
-    forecast_records = update_forecast(forecast_file_path, args.weather_provider, args.location, reference_epoch)
+        try:
+            records = update_history(records, history_file_path, args.weather_provider, args.location)
+        except RuntimeError as e:
+            print(f"Weather fetch failed, skipping: {e}", flush=True)
+    forecast_records = []
+    try:
+        forecast_records = update_forecast(forecast_file_path, args.weather_provider, args.location, reference_epoch)
+    except RuntimeError as e:
+        print(f"Forecast fetch failed, skipping: {e}", flush=True)
     panels = build_all_panels(
         font_header, font_axis, font_info_date, font_info_time, font_info_meta, records, forecast_records, args.location, args.weather_provider, reference_epoch
     )
@@ -877,19 +901,22 @@ def main():
     try:
         while True:
             if time.time() - last_weather_fetch >= WEATHER_UPDATE_MIN * 60:
-                reference_epoch = int(time.time())
-                records = load_history(history_file_path)
-                if not args.no_fetch_history:
-                    records = update_history(records, history_file_path, args.weather_provider, args.location)
-                forecast_records = update_forecast(forecast_file_path, args.weather_provider, args.location, reference_epoch)
-                panels = build_all_panels(
-                    font_header, font_axis, font_info_date, font_info_time, font_info_meta, records, forecast_records, args.location, args.weather_provider, reference_epoch
-                )
-                for position in (POS_TOP_LEFT, POS_TOP_MIDDLE, POS_TOP_RIGHT, POS_BOTTOM_LEFT, POS_BOTTOM_MIDDLE, POS_BOTTOM_RIGHT):
-                    lcd.DisplayPILImage(panels[position], x=position[0], y=position[1])
-                    time.sleep(INITIAL_DRAW_DELAY_SEC)
                 last_weather_fetch = time.time()
-                last_reference_minute = datetime.fromtimestamp(reference_epoch).minute
+                reference_epoch = int(time.time())
+                try:
+                    records = load_history(history_file_path)
+                    if not args.no_fetch_history:
+                        records = update_history(records, history_file_path, args.weather_provider, args.location)
+                    forecast_records = update_forecast(forecast_file_path, args.weather_provider, args.location, reference_epoch)
+                    panels = build_all_panels(
+                        font_header, font_axis, font_info_date, font_info_time, font_info_meta, records, forecast_records, args.location, args.weather_provider, reference_epoch
+                    )
+                    for position in (POS_TOP_LEFT, POS_TOP_MIDDLE, POS_TOP_RIGHT, POS_BOTTOM_LEFT, POS_BOTTOM_MIDDLE, POS_BOTTOM_RIGHT):
+                        lcd.DisplayPILImage(panels[position], x=position[0], y=position[1])
+                        time.sleep(INITIAL_DRAW_DELAY_SEC)
+                    last_reference_minute = datetime.fromtimestamp(reference_epoch).minute
+                except RuntimeError as e:
+                    print(f"Weather fetch failed, skipping: {e}", flush=True)
 
             current_epoch = int(time.time())
             current_minute = datetime.fromtimestamp(current_epoch).minute
