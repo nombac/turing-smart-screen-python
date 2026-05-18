@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import json
 import os
+import sys
 import time
 import urllib.parse
 import urllib.request
@@ -203,7 +204,11 @@ def collect_once(location):
     for provider in PROVIDERS:
         path = get_history_file_path(provider)
         records = load_history(path)
-        record = fetch_current(provider, location)
+        try:
+            record = fetch_current(provider, location)
+        except Exception as e:
+            print(f"[{provider}] fetch failed, skipping: {e}", file=sys.stderr)
+            continue
         if not records or record["observed_at"] > records[-1]["observed_at"]:
             append_history(path, record)
             records.append(record)
