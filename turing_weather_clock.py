@@ -2,6 +2,7 @@
 import argparse
 import json
 import os
+import sys
 from io import BytesIO
 import time
 import urllib.parse
@@ -681,12 +682,15 @@ def main():
         while True:
             if not args.exclude_weather and time.time() - last_weather > WEATHER_UPDATE_MIN * 60:
                 now = time.localtime()
-                weather = get_weather(weather_provider, weather_location, temp_subinfo_mode)
-                top_box, _, _, bottom_box = build_display_boxes(
-                    (font_source, font_weather_bold, font_weather), font_date, font_large, font_seconds, weather, now
-                )
-                lcd.DisplayPILImage(top_box, x=WEATHER_X, y=WEATHER_Y)
-                lcd.DisplayPILImage(bottom_box, x=DATE_X, y=DATE_Y)
+                try:
+                    weather = get_weather(weather_provider, weather_location, temp_subinfo_mode)
+                    top_box, _, _, bottom_box = build_display_boxes(
+                        (font_source, font_weather_bold, font_weather), font_date, font_large, font_seconds, weather, now
+                    )
+                    lcd.DisplayPILImage(top_box, x=WEATHER_X, y=WEATHER_Y)
+                    lcd.DisplayPILImage(bottom_box, x=DATE_X, y=DATE_Y)
+                except RuntimeError as e:
+                    print(f"Weather fetch failed, retrying in {WEATHER_UPDATE_MIN} min: {e}", file=sys.stderr)
                 last_weather = time.time()
 
             now = time.localtime()
