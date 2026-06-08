@@ -922,12 +922,15 @@ def main():
             current_minute = datetime.fromtimestamp(current_epoch).minute
             if current_minute != last_reference_minute:
                 reference_epoch = current_epoch
-                panels = build_all_panels(
-                    font_header, font_axis, font_info_date, font_info_time, font_info_meta, records, forecast_records, args.location, args.weather_provider, reference_epoch
-                )
-                for position in (POS_TOP_LEFT, POS_TOP_MIDDLE, POS_TOP_RIGHT, POS_BOTTOM_LEFT, POS_BOTTOM_MIDDLE, POS_BOTTOM_RIGHT):
-                    lcd.DisplayPILImage(panels[position], x=position[0], y=position[1])
-                    time.sleep(INITIAL_DRAW_DELAY_SEC)
+                try:
+                    panels = build_all_panels(
+                        font_header, font_axis, font_info_date, font_info_time, font_info_meta, records, forecast_records, args.location, args.weather_provider, reference_epoch
+                    )
+                    for position in (POS_TOP_LEFT, POS_TOP_MIDDLE, POS_TOP_RIGHT, POS_BOTTOM_LEFT, POS_BOTTOM_MIDDLE, POS_BOTTOM_RIGHT):
+                        lcd.DisplayPILImage(panels[position], x=position[0], y=position[1])
+                        time.sleep(INITIAL_DRAW_DELAY_SEC)
+                except RuntimeError as e:
+                    print(f"Display update failed, skipping: {e}", flush=True)
                 last_reference_minute = current_minute
 
             time.sleep(0.2)
