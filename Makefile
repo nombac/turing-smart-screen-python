@@ -43,16 +43,21 @@ _SYSMON   = $(if $(TOP_LEFT),--top-left $(TOP_LEFT)) \
             $(if $(BOTTOM_LEFT),--bottom-left $(BOTTOM_LEFT)) \
             $(if $(BOTTOM_RIGHT),--bottom-right $(BOTTOM_RIGHT))
 
-.PHONY: clock forecast sysmon history
+.PHONY: clock forecast sysmon history startup
 
 clock:
-	python3 turing_weather_clock.py $(_COMMON) $(_WEATHER) $(_CLOCK)
+	/opt/local/bin/python3 turing_weather_clock.py $(_COMMON) $(_WEATHER) $(_CLOCK)
 
 forecast:
-	python3 turing_weather_forecast_monitor.py $(_COMMON) $(_WEATHER) $(_FORECAST)
+	/opt/local/bin/python3 turing_weather_forecast_monitor.py $(_COMMON) $(_WEATHER) $(_FORECAST)
 
 sysmon:
-	python3 turing_system_monitor.py $(_COMMON) $(_SYSMON)
+	/opt/local/bin/python3 turing_system_monitor.py $(_COMMON) $(_SYSMON)
 
 history:
-	python3 turing_weather_history_collector.py $(if $(LOCATION),--location $(LOCATION))
+	/opt/local/bin/python3 turing_weather_history_collector.py $(if $(LOCATION),--location $(LOCATION))
+
+startup:
+	wsh run -- env WEATHERAPI_KEY='$(WEATHERAPI_KEY)' make history
+	wsh run -- env WEATHERAPI_KEY='$(WEATHERAPI_KEY)' make forecast PORT=/dev/cu.usbmodem2
+	wsh run -- make clock CLOCK_LANG=ja WEATHER_PROVIDER=weathernews
