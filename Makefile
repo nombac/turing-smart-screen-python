@@ -58,6 +58,6 @@ history:
 	/opt/local/bin/python3 turing_weather_history_collector.py $(if $(LOCATION),--location $(LOCATION))
 
 startup:
-	wsh run -- env WEATHERAPI_KEY='$(WEATHERAPI_KEY)' make history
-	wsh run -- env WEATHERAPI_KEY='$(WEATHERAPI_KEY)' make forecast PORT=/dev/cu.usbmodem2
+	wsh run -- env WEATHERAPI_KEY='$(WEATHERAPI_KEY)' OPENWEATHER_API_KEY='$(OPENWEATHER_API_KEY)' make history
+	wsh run -- env WEATHERAPI_KEY='$(WEATHERAPI_KEY)' OPENWEATHER_API_KEY='$(OPENWEATHER_API_KEY)' make forecast PORT=/dev/cu.usbmodem2
 	wsh run -- make clock CLOCK_LANG=ja WEATHER_PROVIDER=weathernews
