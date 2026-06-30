@@ -466,7 +466,8 @@ def fetch_weather_icon(icon_url):
         scale = WEATHER_ICON_SIZE / max(w, h)
         return png.resize((round(w * scale), round(h * scale)), Image.Resampling.LANCZOS)
     except Exception as e:
-        raise RuntimeError(f"Failed to fetch weather icon: {e}") from e
+        print(f"Failed to fetch weather icon: {e}", file=sys.stderr)
+        return None
 
 
 def build_canvas(width, height):
