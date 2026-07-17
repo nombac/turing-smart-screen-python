@@ -207,7 +207,7 @@ def collect_once(location):
         try:
             record = fetch_current(provider, location)
         except Exception as e:
-            print(f"[{provider}] fetch failed, skipping: {e}", file=sys.stderr)
+            print(f"{datetime.now().strftime('%m/%d/%Y %H:%M:%S')} [{provider}] fetch failed, skipping: {e}", file=sys.stderr)
             continue
         if not records or record["observed_at"] > records[-1]["observed_at"]:
             append_history(path, record)

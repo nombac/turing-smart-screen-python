@@ -854,12 +854,12 @@ def main():
         try:
             records = update_history(records, history_file_path, args.weather_provider, args.location)
         except RuntimeError as e:
-            print(f"Weather fetch failed, skipping: {e}", flush=True)
+            print(f"{datetime.now().strftime('%m/%d/%Y %H:%M:%S')} Weather fetch failed, skipping: {e}", flush=True)
     forecast_records = []
     try:
         forecast_records = update_forecast(forecast_file_path, args.weather_provider, args.location, reference_epoch)
     except RuntimeError as e:
-        print(f"Forecast fetch failed, skipping: {e}", flush=True)
+        print(f"{datetime.now().strftime('%m/%d/%Y %H:%M:%S')} Forecast fetch failed, skipping: {e}", flush=True)
     panels = build_all_panels(
         font_header, font_axis, font_info_date, font_info_time, font_info_meta, records, forecast_records, args.location, args.weather_provider, reference_epoch
     )
@@ -916,7 +916,7 @@ def main():
                         time.sleep(INITIAL_DRAW_DELAY_SEC)
                     last_reference_minute = datetime.fromtimestamp(reference_epoch).minute
                 except RuntimeError as e:
-                    print(f"Weather fetch failed, skipping: {e}", flush=True)
+                    print(f"{datetime.now().strftime('%m/%d/%Y %H:%M:%S')} Weather fetch failed, skipping: {e}", flush=True)
 
             current_epoch = int(time.time())
             current_minute = datetime.fromtimestamp(current_epoch).minute
@@ -930,7 +930,7 @@ def main():
                         lcd.DisplayPILImage(panels[position], x=position[0], y=position[1])
                         time.sleep(INITIAL_DRAW_DELAY_SEC)
                 except RuntimeError as e:
-                    print(f"Display update failed, skipping: {e}", flush=True)
+                    print(f"{datetime.now().strftime('%m/%d/%Y %H:%M:%S')} Display update failed, skipping: {e}", flush=True)
                 last_reference_minute = current_minute
 
             time.sleep(0.2)

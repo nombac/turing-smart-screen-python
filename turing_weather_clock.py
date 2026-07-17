@@ -466,7 +466,7 @@ def fetch_weather_icon(icon_url):
         scale = WEATHER_ICON_SIZE / max(w, h)
         return png.resize((round(w * scale), round(h * scale)), Image.Resampling.LANCZOS)
     except Exception as e:
-        print(f"Failed to fetch weather icon: {e}", file=sys.stderr)
+        print(f"{datetime.now().strftime('%m/%d/%Y %H:%M:%S')} Failed to fetch weather icon: {e}", file=sys.stderr)
         return None
 
 
@@ -691,7 +691,7 @@ def main():
                     lcd.DisplayPILImage(top_box, x=WEATHER_X, y=WEATHER_Y)
                     lcd.DisplayPILImage(bottom_box, x=DATE_X, y=DATE_Y)
                 except RuntimeError as e:
-                    print(f"Weather fetch failed, retrying in {WEATHER_UPDATE_MIN} min: {e}", file=sys.stderr)
+                    print(f"{datetime.now().strftime('%m/%d/%Y %H:%M:%S')} Weather fetch failed, retrying in {WEATHER_UPDATE_MIN} min: {e}", file=sys.stderr)
                 last_weather = time.time()
 
             now = time.localtime()
