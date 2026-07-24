@@ -327,9 +327,9 @@ def build_info_panel_with_icon(font_date, font_time, font_meta, display_epoch, l
     draw.text(((PANEL_W - date_width) / 2, 8), date_text, font=font_date, fill=COLOR_LABEL)
     draw.text(((PANEL_W - time_width) / 2, 28), time_text, font=font_time, fill=COLOR_LABEL)
 
-    icon_sizes = {"weatherapi": (104, 104), "openweather": (104, 104), "weathernews": (76, 56)}
+    icon_sizes = {"weatherapi": (78, 78), "openweather": (78, 78), "weathernews": (57, 42)}
     if icon_image is not None:
-        icon_size = icon_sizes.get(provider, (104, 104))
+        icon_size = icon_sizes.get(provider, (78, 78))
         icon = icon_image.resize(icon_size)
         icon_x = (PANEL_W - icon.width) // 2
         icon_y = 30 + (110 - icon.height) // 2
