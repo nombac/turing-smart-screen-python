@@ -43,7 +43,7 @@ _SYSMON   = $(if $(TOP_LEFT),--top-left $(TOP_LEFT)) \
             $(if $(BOTTOM_LEFT),--bottom-left $(BOTTOM_LEFT)) \
             $(if $(BOTTOM_RIGHT),--bottom-right $(BOTTOM_RIGHT))
 
-.PHONY: clock forecast sysmon history startup
+.PHONY: clock forecast sysmon history startup stop
 
 clock:
 	/opt/local/bin/python3 turing_weather_clock.py $(_COMMON) $(_WEATHER) $(_CLOCK)
@@ -58,6 +58,9 @@ history:
 	/opt/local/bin/python3 turing_weather_history_collector.py $(if $(LOCATION),--location $(LOCATION))
 
 startup:
-	wsh run -- env WEATHERAPI_KEY='$(WEATHERAPI_KEY)' OPENWEATHER_API_KEY='$(OPENWEATHER_API_KEY)' make history
-	wsh run -- env WEATHERAPI_KEY='$(WEATHERAPI_KEY)' OPENWEATHER_API_KEY='$(OPENWEATHER_API_KEY)' make forecast PORT=/dev/cu.usbmodem2
-	wsh run -- make clock CLOCK_LANG=ja WEATHER_PROVIDER=weathernews
+	wsh run -X -- env WEATHERAPI_KEY='$(WEATHERAPI_KEY)' OPENWEATHER_API_KEY='$(OPENWEATHER_API_KEY)' make history
+	wsh run -X -- env WEATHERAPI_KEY='$(WEATHERAPI_KEY)' OPENWEATHER_API_KEY='$(OPENWEATHER_API_KEY)' make forecast PORT=/dev/cu.usbmodem2
+	wsh run -X -- make clock CLOCK_LANG=ja WEATHER_PROVIDER=weathernews
+
+stop:
+	pkill -f 'turing_(weather_clock|weather_forecast_monitor|weather_history_collector)\.py'
