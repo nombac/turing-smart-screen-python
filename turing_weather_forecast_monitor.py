@@ -809,14 +809,15 @@ def build_all_panels(font_header, font_cardinal, font_info_date, font_info_time,
             font_header, font_cardinal, "Rain", format_precip(current["precip_mm"]), records, forecast_records, "precip_mm",
             RAIN_MIN, RAIN_MAX, COLOR_RAIN, COLOR_RAIN_FILL, reference_epoch, axis_labels=(f"{RAIN_MIN:.0f}", f"{(RAIN_MIN + RAIN_MAX) / 2:.0f}", f"{RAIN_MAX:.0f}")
         ),
+        # 気圧パネルを右下に置くと表示が崩れるため、湿度と位置を入れ替えている
         POS_BOTTOM_LEFT: build_graph_panel_with_forecast(
-            font_header, font_cardinal, "Humid", format_percent(current["humidity"]), records, forecast_records, "humidity",
-            HUMIDITY_MIN, HUMIDITY_MAX, COLOR_HUMIDITY, COLOR_HUMIDITY_FILL, reference_epoch, axis_labels=(f"{HUMIDITY_MIN:.0f}", f"{(HUMIDITY_MIN + HUMIDITY_MAX) / 2:.0f}", f"{HUMIDITY_MAX:.0f}")
+            font_header, font_cardinal, "Press", format_pressure(current["pressure_hpa"]), records, forecast_records, "pressure_hpa",
+            PRESSURE_MIN, PRESSURE_MAX, COLOR_PRESSURE, COLOR_PRESSURE_FILL, reference_epoch, axis_labels=(f"{PRESSURE_MIN:.0f}", f"{(PRESSURE_MIN + PRESSURE_MAX) / 2:.0f}", f"{PRESSURE_MAX:.0f}")
         ),
         POS_BOTTOM_MIDDLE: build_wind_panel(font_header, font_cardinal, records, forecast_records),
         POS_BOTTOM_RIGHT: build_graph_panel_with_forecast(
-            font_header, font_cardinal, "Press", format_pressure(current["pressure_hpa"]), records, forecast_records, "pressure_hpa",
-            PRESSURE_MIN, PRESSURE_MAX, COLOR_PRESSURE, COLOR_PRESSURE_FILL, reference_epoch, axis_labels=(f"{PRESSURE_MIN:.0f}", f"{(PRESSURE_MIN + PRESSURE_MAX) / 2:.0f}", f"{PRESSURE_MAX:.0f}")
+            font_header, font_cardinal, "Humid", format_percent(current["humidity"]), records, forecast_records, "humidity",
+            HUMIDITY_MIN, HUMIDITY_MAX, COLOR_HUMIDITY, COLOR_HUMIDITY_FILL, reference_epoch, axis_labels=(f"{HUMIDITY_MIN:.0f}", f"{(HUMIDITY_MIN + HUMIDITY_MAX) / 2:.0f}", f"{HUMIDITY_MAX:.0f}")
         ),
     }
     return panels
