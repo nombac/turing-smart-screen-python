@@ -12,7 +12,7 @@ See [README_turing_weather_clock.md](./README_turing_weather_clock.md), [README_
 
 <p>
   <img src="./turing_weather_clock_snapshot.png" alt="Turing Weather Clock" width="32%" />
-  <img src="./turing_system_monitor_snapshot.png" alt="Turing System Monitor" width="32%" />
+  <!-- <img src="./turing_system_monitor_snapshot.png" alt="Turing System Monitor" width="32%" /> -->
   <img src="./turing_weather_forecast_monitor_snapshot.png" alt="Turing Weather Forecast Monitor" width="32%" />
 </p>
 

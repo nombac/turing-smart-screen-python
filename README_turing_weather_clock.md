@@ -265,7 +265,7 @@ make clock EXCLUDE_WEATHER=1
 
 ### 表示例
 
-表示例は上の画像 [`turing_weather_clock_snapshot.png`](/Users/shirose/Library/CloudStorage/Dropbox/turing-smart-screen-python/turing_weather_clock_snapshot.png) を参照してください。
+表示例は上の画像 [`turing_weather_clock_snapshot.png`](./turing_weather_clock_snapshot.png) を参照してください。
 
 ### 謝辞
 
@@ -537,7 +537,7 @@ If a required key is missing or the API response is invalid, the script stops wi
 
 ### Display Example
 
-See the image above: [`turing_weather_clock_snapshot.png`](/Users/shirose/Library/CloudStorage/Dropbox/turing-smart-screen-python/turing_weather_clock_snapshot.png)
+See the image above: [`turing_weather_clock_snapshot.png`](./turing_weather_clock_snapshot.png)
 
 ### Acknowledgements
 
