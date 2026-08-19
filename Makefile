@@ -60,7 +60,7 @@ history:
 startup:
 	wsh run -X -- env WEATHERAPI_KEY='$(WEATHERAPI_KEY)' OPENWEATHER_API_KEY='$(OPENWEATHER_API_KEY)' make history
 	wsh run -X -- env WEATHERAPI_KEY='$(WEATHERAPI_KEY)' OPENWEATHER_API_KEY='$(OPENWEATHER_API_KEY)' make forecast PORT=/dev/cu.usbmodem2
-	wsh run -X -- make clock CLOCK_LANG=ja WEATHER_PROVIDER=weathernews PORT=/dev/cu.usbmodemUSB35INCHIPSV21
+	wsh run -X -- make clock LANDSCAPE=1 CLOCK_LANG=ja WEATHER_PROVIDER=weathernews PORT=/dev/cu.usbmodemUSB35INCHIPSV21
 
 stop:
 	pkill -f 'turing_(weather_clock|weather_forecast_monitor|weather_history_collector)\.py'
