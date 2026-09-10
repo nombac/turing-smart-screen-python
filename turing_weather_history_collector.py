@@ -11,7 +11,8 @@ WEATHER_LOCATION = "Yokohama"
 WEATHER_TEXT_LANG = "en"
 UPDATE_INTERVAL_SEC = 5 * 60
 HISTORY_WINDOW_SEC = 6 * 60 * 60
-HISTORY_FILE_TEMPLATE = "turing_weather_history_{provider}.jsonl"
+DATA_DIR = os.path.expanduser("~/Library/Caches/turing-smart-screen")
+HISTORY_FILE_TEMPLATE = os.path.join(DATA_DIR, "turing_weather_history_{provider}.jsonl")
 
 PROVIDERS = ["weatherapi", "openweather", "weathernews"]
 
@@ -223,6 +224,7 @@ def main():
     parser.add_argument("--location", default=WEATHER_LOCATION, help="Weather query location")
     args = parser.parse_args()
 
+    os.makedirs(DATA_DIR, exist_ok=True)
     print(f"Starting weather history collector (location={args.location}, interval={UPDATE_INTERVAL_SEC}s)")
     while True:
         collect_once(args.location)

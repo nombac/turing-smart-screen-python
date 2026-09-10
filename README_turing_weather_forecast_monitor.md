@@ -95,23 +95,23 @@ make forecast NO_FETCH_HISTORY=1
 
 ### データファイル
 
-実測履歴は provider ごとの JSONL に保存されます。
+実測履歴は provider ごとの JSONL として `~/Library/Caches/turing-smart-screen/` 以下に保存されます。
 
 - `weatherapi`:
-  [`turing_weather_history_weatherapi.jsonl`](/Users/shirose/Library/CloudStorage/Dropbox/turing-smart-screen-python/turing_weather_history_weatherapi.jsonl)
+  [`turing_weather_history_weatherapi.jsonl`](/Users/shirose/Library/Caches/turing-smart-screen/turing_weather_history_weatherapi.jsonl)
 - `openweather`:
-  [`turing_weather_history_openweather.jsonl`](/Users/shirose/Library/CloudStorage/Dropbox/turing-smart-screen-python/turing_weather_history_openweather.jsonl)
+  [`turing_weather_history_openweather.jsonl`](/Users/shirose/Library/Caches/turing-smart-screen/turing_weather_history_openweather.jsonl)
 - `weathernews`:
-  [`turing_weather_history_weathernews.jsonl`](/Users/shirose/Library/CloudStorage/Dropbox/turing-smart-screen-python/turing_weather_history_weathernews.jsonl)
+  [`turing_weather_history_weathernews.jsonl`](/Users/shirose/Library/Caches/turing-smart-screen/turing_weather_history_weathernews.jsonl)
 
-予報データは別の provider ごとの JSONL に保存されます。
+予報データは別の provider ごとの JSONL として同じディレクトリに保存されます。
 
 - `weatherapi`:
-  [`turing_weather_forecast_weatherapi.jsonl`](/Users/shirose/Library/CloudStorage/Dropbox/turing-smart-screen-python/turing_weather_forecast_weatherapi.jsonl)
+  [`turing_weather_forecast_weatherapi.jsonl`](/Users/shirose/Library/Caches/turing-smart-screen/turing_weather_forecast_weatherapi.jsonl)
 - `openweather`:
-  [`turing_weather_forecast_openweather.jsonl`](/Users/shirose/Library/CloudStorage/Dropbox/turing-smart-screen-python/turing_weather_forecast_openweather.jsonl)
+  [`turing_weather_forecast_openweather.jsonl`](/Users/shirose/Library/Caches/turing-smart-screen/turing_weather_forecast_openweather.jsonl)
 - `weathernews`:
-  [`turing_weather_forecast_weathernews.jsonl`](/Users/shirose/Library/CloudStorage/Dropbox/turing-smart-screen-python/turing_weather_forecast_weathernews.jsonl)
+  [`turing_weather_forecast_weathernews.jsonl`](/Users/shirose/Library/Caches/turing-smart-screen/turing_weather_forecast_weathernews.jsonl)
 
 実測 JSONL の必須キーは次です。
 
@@ -157,9 +157,9 @@ make forecast NO_FETCH_HISTORY=1
 - `WEATHER_UPDATE_MIN`
   天気 API の再取得間隔です。現在値: `5`
 - `HISTORY_FILE_TEMPLATE`
-  実測履歴 JSONL のファイル名テンプレートです。現在値: `"turing_weather_history_{provider}.jsonl"`
+  実測履歴 JSONL のパステンプレートです。現在値: `"~/Library/Caches/turing-smart-screen/turing_weather_history_{provider}.jsonl"`
 - `FORECAST_FILE_TEMPLATE`
-  予報 JSONL のファイル名テンプレートです。現在値: `"turing_weather_forecast_{provider}.jsonl"`
+  予報 JSONL のパステンプレートです。現在値: `"~/Library/Caches/turing-smart-screen/turing_weather_forecast_{provider}.jsonl"`
 - `HISTORY_WINDOW_SEC`
   過去側・未来側それぞれの時間幅です。現在値: `6 * 60 * 60`
 
