@@ -5,7 +5,7 @@
 ## 日本語
 
 `turing_weather_forecast_monitor.py` は、Turing Smart Screen 向けの天気履歴・予報モニタです。  
-3x2 のレイアウトで、左上に気温、上中に現在日時とアイコン、右上に降水量、左下に湿度、中下に風ベクトル、右下に気圧を表示します。
+3x2 のレイアウトで、左上に気温、上中に現在日時とアイコン、右上に降水量、左下に気圧、中下に風ベクトル、右下に湿度を表示します。
 
 各グラフは、現在時刻を中心にして左半分に過去 6 時間の実測、右半分に未来 6 時間の予報を表示します。  
 過去データは provider ごとの履歴 JSONL に追記保存し、予報データは別の provider ごとの forecast JSONL に保存します。
@@ -86,12 +86,12 @@ make forecast NO_FETCH_HISTORY=1
   上中パネルに現在日付、現在時刻、天気アイコン、場所、ソースを表示します。
 - `Rain`
   左半分に過去 6 時間の降水量、右半分に未来 6 時間の予報点を表示します。
-- `Humid`
-  左半分に過去 6 時間の湿度、右半分に未来 6 時間の予報点を表示します。
-- `Wind`
-  過去 6 時間の風向・風速ベクトルを表示し、最新の 1 本だけを強調します。
 - `Press`
   左半分に過去 6 時間の気圧、右半分に未来 6 時間の予報点を表示します。
+- `Wind`
+  過去 6 時間の風向・風速ベクトルを表示し、最新の 1 本だけを強調します。
+- `Humid`
+  左半分に過去 6 時間の湿度、右半分に未来 6 時間の予報点を表示します。
 
 ### データファイル
 
@@ -181,7 +181,7 @@ make forecast NO_FETCH_HISTORY=1
 ## English
 
 `turing_weather_forecast_monitor.py` is a weather history / forecast monitor for Turing Smart Screen.  
-It uses a 3x2 layout with temperature in the top-left, date/time/icon in the top-middle, rain in the top-right, humidity in the bottom-left, wind vectors in the bottom-middle, and pressure in the bottom-right.
+It uses a 3x2 layout with temperature in the top-left, date/time/icon in the top-middle, rain in the top-right, pressure in the bottom-left, wind vectors in the bottom-middle, and humidity in the bottom-right.
 
 Each graph uses the current time as the center of the horizontal axis: the left half shows the past 6 hours of observed data, and the right half shows the next 6 hours of forecast data.
 
@@ -261,9 +261,9 @@ make forecast NO_FETCH_HISTORY=1
   Shows current date, current time, weather icon, location, and provider.
 - `Rain`
   Past 6 hours on the left, forecast dots on the right.
-- `Humid`
+- `Press`
   Past 6 hours on the left, forecast dots on the right.
 - `Wind`
   Shows wind direction / speed vectors for the past 6 hours and highlights the latest one.
-- `Press`
+- `Humid`
   Past 6 hours on the left, forecast dots on the right.
