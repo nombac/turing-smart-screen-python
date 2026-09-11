@@ -44,7 +44,7 @@ POS_BOTTOM_MIDDLE = (PANEL_W, PANEL_H)
 POS_BOTTOM_RIGHT = (PANEL_W * 2, PANEL_H)
 
 FONT_SIZE_LABEL = 15
-FONT_SIZE_PANEL_HEADER = 20
+FONT_SIZE_PANEL_HEADER = 18
 FONT_SIZE_AXIS = 12
 FONT_SIZE_INFO_DATE = 16
 FONT_SIZE_INFO_TIME = 24
@@ -179,9 +179,9 @@ def build_graph_panel_with_forecast(font_header, font_small, title, current_text
     draw.text((PANEL_W - 10 - value_width, 8), current_text, font=font_header, fill=line_color)
 
     graph_x0 = 10
-    graph_y0 = 40
+    graph_y0 = 34
     graph_w = PANEL_W - 20
-    graph_h = PANEL_H - 50
+    graph_h = PANEL_H - 44
     center_x = graph_x0 + graph_w // 2
     left_w = graph_w // 2
     right_w = graph_w - left_w
@@ -241,9 +241,9 @@ def build_temp_panel(font_header, font_small, records, forecast_records, referen
     draw.text((PANEL_W - 10 - value_width, 8), current_text, font=font_header, fill=COLOR_TEMP)
 
     graph_x0 = 10
-    graph_y0 = 40
+    graph_y0 = 34
     graph_w = PANEL_W - 20
-    graph_h = PANEL_H - 50
+    graph_h = PANEL_H - 44
     draw_grid(draw, graph_x0, graph_y0, graph_w, graph_h)
     draw.rectangle(
         [(graph_x0, graph_y0), (graph_x0 + graph_w - 1, graph_y0 + graph_h - 1)],
@@ -355,9 +355,9 @@ def build_wind_panel(font_header, font_cardinal, records, forecast_records):
     draw.text((PANEL_W - 10 - value_width, 8), current_text, font=font_header, fill=COLOR_WIND_LATEST)
 
     graph_x0 = 10
-    graph_y0 = 40
+    graph_y0 = 34
     graph_w = PANEL_W - 20
-    graph_h = PANEL_H - 50
+    graph_h = PANEL_H - 44
     draw.rectangle(
         [(graph_x0, graph_y0), (graph_x0 + graph_w - 1, graph_y0 + graph_h - 1)],
         outline=COLOR_GRAPH_BORDER,
