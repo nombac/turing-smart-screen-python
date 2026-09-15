@@ -62,8 +62,8 @@ COLOR_RAIN = (210, 230, 255)
 COLOR_RAIN_FILL = (95, 95, 95)
 COLOR_PRESSURE = (255, 110, 110)
 COLOR_PRESSURE_FILL = (90, 30, 30)
-COLOR_WIND_FORECAST = (60, 45, 75)
-COLOR_WIND = (110, 85, 130)
+COLOR_WIND_FORECAST = (110, 85, 130)
+COLOR_WIND = (60, 45, 75)
 COLOR_WIND_LATEST = (225, 150, 255)
 
 TEMP_MIN = 0.0
@@ -74,6 +74,10 @@ RAIN_MIN = 0.0
 RAIN_MAX = 20.0
 PRESSURE_MIN = 960.0
 PRESSURE_MAX = 1040.0
+
+WIND_ARROW_HEAD_LEN = 10
+WIND_ARROW_HEAD_HALF_W = 5
+WIND_ARROW_CARDINAL_GAP = 4
 
 
 def parse_brightness(value):
@@ -366,18 +370,22 @@ def build_wind_panel(font_header, font_cardinal, records, forecast_records):
 
     center_x = graph_x0 + graph_w // 2
     center_y = graph_y0 + graph_h // 2
-    radius = min(graph_w, graph_h) // 2 - 8
     draw.line([(center_x, graph_y0 + 6), (center_x, graph_y0 + graph_h - 7)], fill=COLOR_GRID)
     draw.line([(graph_x0 + 6, center_y), (graph_x0 + graph_w - 7, center_y)], fill=COLOR_GRID)
     cardinal_font = font_cardinal
     n_width = draw.textlength("N", font=cardinal_font)
     e_width = draw.textlength("E", font=cardinal_font)
     s_width = draw.textlength("S", font=cardinal_font)
-    w_width = draw.textlength("W", font=cardinal_font)
-    draw.text((center_x - n_width / 2, graph_y0 + 8), "N", font=cardinal_font, fill=COLOR_LABEL)
+    n_pos = (center_x - n_width / 2, graph_y0 + 8)
+    s_pos = (center_x - s_width / 2, graph_y0 + graph_h - FONT_SIZE_LABEL - 8)
+    draw.text(n_pos, "N", font=cardinal_font, fill=COLOR_LABEL)
     draw.text((graph_x0 + graph_w - e_width - 8, center_y - FONT_SIZE_LABEL / 2), "E", font=cardinal_font, fill=COLOR_LABEL)
-    draw.text((center_x - s_width / 2, graph_y0 + graph_h - FONT_SIZE_LABEL - 8), "S", font=cardinal_font, fill=COLOR_LABEL)
+    draw.text(s_pos, "S", font=cardinal_font, fill=COLOR_LABEL)
     draw.text((graph_x0 + 8, center_y - FONT_SIZE_LABEL / 2), "W", font=cardinal_font, fill=COLOR_LABEL)
+
+    n_bottom = draw.textbbox(n_pos, "N", font=cardinal_font)[3]
+    s_top = draw.textbbox(s_pos, "S", font=cardinal_font)[1]
+    radius = int(min(center_y - n_bottom, s_top - center_y) - WIND_ARROW_CARDINAL_GAP)
 
     latest_observed_at = records[-1]["observed_at"]
     left_epoch = latest_observed_at - HISTORY_WINDOW_SEC
@@ -405,41 +413,36 @@ def build_wind_panel(font_header, font_cardinal, records, forecast_records):
             src = int(index * (len(forecast_visible) - 1) / (DISPLAY_POINT_COUNT - 1))
             sampled.append(forecast_visible[src])
         forecast_visible = sampled
+    if radius <= WIND_ARROW_HEAD_LEN:
+        raise RuntimeError(f"Wind panel graph area is too small to draw arrows: radius={radius}")
+
     for record in forecast_visible:
-        speed = float(record["wind_speed_mps"])
-        direction = float(record["wind_dir_deg"])
-        length = radius * min(max(speed, 0.0), 15.0) / 15.0
-        rad = math.radians(direction)
-        dx = length * math.sin(rad)
-        dy = length * math.cos(rad)
+        rad = math.radians(float(record["wind_dir_deg"]))
+        dx = radius * math.sin(rad)
+        dy = radius * math.cos(rad)
         draw.line([(center_x, center_y), (center_x + dx, center_y + dy)], fill=COLOR_WIND_FORECAST, width=1)
 
     for index, record in enumerate(visible_records):
-        speed = float(record["wind_speed_mps"])
-        direction = float(record["wind_dir_deg"])
-        length = radius * min(max(speed, 0.0), 15.0) / 15.0
-        rad = math.radians(direction)
-        dx = length * math.sin(rad)
-        dy = length * math.cos(rad)
+        rad = math.radians(float(record["wind_dir_deg"]))
+        dx = radius * math.sin(rad)
+        dy = radius * math.cos(rad)
         line_width = 3 if index == len(visible_records) - 1 else 1
         line_color = COLOR_WIND_LATEST if index == len(visible_records) - 1 else COLOR_WIND
         end_x = center_x + dx
         end_y = center_y + dy
         draw.line([(center_x, center_y), (end_x, end_y)], fill=line_color, width=line_width)
 
-        if index == len(visible_records) - 1 and length > 0:
-            head_len = 6
-            head_half_width = 3
-            ux = dx / length
-            uy = dy / length
+        if index == len(visible_records) - 1:
+            ux = dx / radius
+            uy = dy / radius
             px = -uy
             py = ux
-            base_x = end_x - head_len * ux
-            base_y = end_y - head_len * uy
+            base_x = end_x - WIND_ARROW_HEAD_LEN * ux
+            base_y = end_y - WIND_ARROW_HEAD_LEN * uy
             arrow_points = [
                 (end_x, end_y),
-                (base_x + head_half_width * px, base_y + head_half_width * py),
-                (base_x - head_half_width * px, base_y - head_half_width * py),
+                (base_x + WIND_ARROW_HEAD_HALF_W * px, base_y + WIND_ARROW_HEAD_HALF_W * py),
+                (base_x - WIND_ARROW_HEAD_HALF_W * px, base_y - WIND_ARROW_HEAD_HALF_W * py),
             ]
             draw.polygon(arrow_points, fill=line_color)
 
