@@ -89,7 +89,7 @@ make forecast NO_FETCH_HISTORY=1
 - `Press`
   左半分に過去 6 時間の気圧、右半分に未来 6 時間の予報点を表示します。
 - `Wind`
-  過去 6 時間と未来 6 時間の風向を固定長ベクトルで表示し、最新の 1 本だけを矢印付きで強調します。ベクトル長は風速を表さず、風速は右上の数値で表示します。
+  過去 6 時間と未来 6 時間の風向を固定長ベクトルで表示し、最新の 1 本だけを矢印付きで強調します。ベクトル長は風速を表さず、風速は右上の数値と、最新ベクトルの真反対側に置いた大きな数値（単位なし）で表示します。
 - `Humid`
   左半分に過去 6 時間の湿度、右半分に未来 6 時間の予報点を表示します。
 
@@ -264,6 +264,6 @@ make forecast NO_FETCH_HISTORY=1
 - `Press`
   Past 6 hours on the left, forecast dots on the right.
 - `Wind`
-  Shows wind direction for the past 6 hours and the next 6 hours as fixed-length vectors, highlighting the latest one with an arrow head. Vector length does not encode speed; the speed is shown as a value in the top-right.
+  Shows wind direction for the past 6 hours and the next 6 hours as fixed-length vectors, highlighting the latest one with an arrow head. Vector length does not encode speed; the speed is shown as a value in the top-right and as a large unitless value placed opposite the latest vector.
 - `Humid`
   Past 6 hours on the left, forecast dots on the right.

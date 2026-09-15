@@ -45,6 +45,7 @@ POS_BOTTOM_RIGHT = (PANEL_W * 2, PANEL_H)
 
 FONT_SIZE_LABEL = 15
 FONT_SIZE_PANEL_HEADER = 18
+FONT_SIZE_WIND_VALUE = 30
 FONT_SIZE_AXIS = 12
 FONT_SIZE_INFO_DATE = 16
 FONT_SIZE_INFO_TIME = 24
@@ -445,6 +446,16 @@ def build_wind_panel(font_header, font_cardinal, records, forecast_records):
                 (base_x - WIND_ARROW_HEAD_HALF_W * px, base_y - WIND_ARROW_HEAD_HALF_W * py),
             ]
             draw.polygon(arrow_points, fill=line_color)
+
+    latest_rad = math.radians(float(visible_records[-1]["wind_dir_deg"]))
+    font_wind_value = font_header.font_variant(size=FONT_SIZE_WIND_VALUE)
+    draw.text(
+        (center_x - radius * math.sin(latest_rad), center_y - radius * math.cos(latest_rad)),
+        f"{current['wind_speed_mps']:.1f}",
+        font=font_wind_value,
+        fill=COLOR_WIND_LATEST,
+        anchor="mm",
+    )
 
     return panel
 
