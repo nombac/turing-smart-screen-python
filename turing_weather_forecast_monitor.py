@@ -79,6 +79,7 @@ PRESSURE_MAX = 1040.0
 WIND_ARROW_HEAD_LEN = 10
 WIND_ARROW_HEAD_HALF_W = 5
 WIND_ARROW_CARDINAL_GAP = 4
+WIND_VALUE_RADIUS_RATIO = 0.6
 
 
 def parse_brightness(value):
@@ -355,9 +356,9 @@ def build_wind_panel(font_header, font_cardinal, records, forecast_records):
     draw.text((10, 8), "Wind", font=font_header, fill=COLOR_LABEL)
 
     current = records[-1]
-    current_text = f"{current['wind_speed_mps']:.1f}m/s"
-    value_width = draw.textlength(current_text, font=font_header)
-    draw.text((PANEL_W - 10 - value_width, 8), current_text, font=font_header, fill=COLOR_WIND_LATEST)
+    unit_text = "m/s"
+    unit_width = draw.textlength(unit_text, font=font_header)
+    draw.text((PANEL_W - 10 - unit_width, 8), unit_text, font=font_header, fill=COLOR_WIND_LATEST)
 
     graph_x0 = 10
     graph_y0 = 34
@@ -449,8 +450,9 @@ def build_wind_panel(font_header, font_cardinal, records, forecast_records):
 
     latest_rad = math.radians(float(visible_records[-1]["wind_dir_deg"]))
     font_wind_value = font_header.font_variant(size=FONT_SIZE_WIND_VALUE)
+    value_radius = radius * WIND_VALUE_RADIUS_RATIO
     draw.text(
-        (center_x - radius * math.sin(latest_rad), center_y - radius * math.cos(latest_rad)),
+        (center_x - value_radius * math.sin(latest_rad), center_y - value_radius * math.cos(latest_rad)),
         f"{current['wind_speed_mps']:.1f}",
         font=font_wind_value,
         fill=COLOR_WIND_LATEST,
