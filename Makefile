@@ -57,10 +57,14 @@ sysmon:
 history:
 	/opt/local/bin/python3 turing_weather_history_collector.py $(if $(LOCATION),--location $(LOCATION))
 
+CLOCK_PORT    = /dev/cu.usbmodemUSB35INCHIPSV21
+FORECAST_PORT = $(shell /opt/local/bin/python3 -c "from serial.tools.list_ports import comports; print(*[p.device for p in comports() if p.serial_number == 'USB35INCHIPSV2' and p.device.startswith('/dev/cu.') and p.device != '$(CLOCK_PORT)'])")
+
 start:
+	@test $(words $(FORECAST_PORT)) -eq 1 || { echo "forecast用ポートが一意に決まりません: '$(FORECAST_PORT)'" >&2; exit 1; }
 	wsh run -X -- env WEATHERAPI_KEY="$$WEATHERAPI_KEY" OPENWEATHER_API_KEY="$$OPENWEATHER_API_KEY" make history
-	wsh run -X -- env WEATHERAPI_KEY="$$WEATHERAPI_KEY" OPENWEATHER_API_KEY="$$OPENWEATHER_API_KEY" make forecast NO_FETCH_HISTORY=1 PORT=/dev/cu.usbmodem2
-	wsh run -X -- make clock LANDSCAPE=1 CLOCK_LANG=ja WEATHER_PROVIDER=weathernews PORT=/dev/cu.usbmodemUSB35INCHIPSV21
+	wsh run -X -- env WEATHERAPI_KEY="$$WEATHERAPI_KEY" OPENWEATHER_API_KEY="$$OPENWEATHER_API_KEY" make forecast NO_FETCH_HISTORY=1 LANDSCAPE=1 PORT=$(FORECAST_PORT)
+	wsh run -X -- make clock LANDSCAPE=1 CLOCK_LANG=ja WEATHER_PROVIDER=weathernews PORT=$(CLOCK_PORT)
 
 stop:
 	pkill -f 'turing_(weather_clock|weather_forecast_monitor|weather_history_collector)\.py'
