@@ -43,7 +43,7 @@ _SYSMON   = $(if $(TOP_LEFT),--top-left $(TOP_LEFT)) \
             $(if $(BOTTOM_LEFT),--bottom-left $(BOTTOM_LEFT)) \
             $(if $(BOTTOM_RIGHT),--bottom-right $(BOTTOM_RIGHT))
 
-.PHONY: clock forecast sysmon history start stop
+.PHONY: clock forecast sysmon history start stop forecast-restart weather-restart
 
 clock:
 	/opt/local/bin/python3 turing_weather_clock.py $(_COMMON) $(_WEATHER) $(_CLOCK)
@@ -60,11 +60,38 @@ history:
 CLOCK_PORT    = /dev/cu.usbmodemUSB35INCHIPSV21
 FORECAST_PORT = $(shell /opt/local/bin/python3 -c "from serial.tools.list_ports import comports; print(*[p.device for p in comports() if p.serial_number == 'USB35INCHIPSV2' and p.device.startswith('/dev/cu.') and p.device != '$(CLOCK_PORT)'])")
 
-start:
+WEATHER_PROCESS_PATTERN  = turing_(weather_clock|weather_forecast_monitor|weather_history_collector)\.py
+FORECAST_PROCESS_PATTERN = turing_weather_forecast_monitor\.py
+
+define check_forecast_port
 	@test $(words $(FORECAST_PORT)) -eq 1 || { echo "forecast用ポートが一意に決まりません: '$(FORECAST_PORT)'" >&2; exit 1; }
-	wsh run -X -- env WEATHERAPI_KEY="$$WEATHERAPI_KEY" OPENWEATHER_API_KEY="$$OPENWEATHER_API_KEY" make history
+endef
+
+define start_forecast
 	wsh run -X -- env WEATHERAPI_KEY="$$WEATHERAPI_KEY" OPENWEATHER_API_KEY="$$OPENWEATHER_API_KEY" make forecast NO_FETCH_HISTORY=1 LANDSCAPE=1 PORT=$(FORECAST_PORT)
+endef
+
+# 終了を待ってから起動しないと、シリアルポートが解放される前に再オープンしてしまう
+define stop_and_wait
+	pkill -f '$(1)'
+	while pgrep -f '$(1)' >/dev/null; do sleep 0.2; done
+endef
+
+start:
+	$(check_forecast_port)
+	wsh run -X -- env WEATHERAPI_KEY="$$WEATHERAPI_KEY" OPENWEATHER_API_KEY="$$OPENWEATHER_API_KEY" make history
+	$(start_forecast)
 	wsh run -X -- make clock LANDSCAPE=1 CLOCK_LANG=ja WEATHER_PROVIDER=weathernews PORT=$(CLOCK_PORT)
 
 stop:
-	pkill -f 'turing_(weather_clock|weather_forecast_monitor|weather_history_collector)\.py'
+	pkill -f '$(WEATHER_PROCESS_PATTERN)'
+
+forecast-restart:
+	$(check_forecast_port)
+	$(call stop_and_wait,$(FORECAST_PROCESS_PATTERN))
+	$(start_forecast)
+
+weather-restart:
+	$(check_forecast_port)
+	$(call stop_and_wait,$(WEATHER_PROCESS_PATTERN))
+	$(MAKE) start
