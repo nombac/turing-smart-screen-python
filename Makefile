@@ -63,7 +63,7 @@ FORECAST_PORT = $(shell /opt/local/bin/python3 -c "from serial.tools.list_ports 
 start:
 	@test $(words $(FORECAST_PORT)) -eq 1 || { echo "forecast用ポートが一意に決まりません: '$(FORECAST_PORT)'" >&2; exit 1; }
 	wsh run -X -- env WEATHERAPI_KEY="$$WEATHERAPI_KEY" OPENWEATHER_API_KEY="$$OPENWEATHER_API_KEY" make history
-	wsh run -X -- env WEATHERAPI_KEY="$$WEATHERAPI_KEY" OPENWEATHER_API_KEY="$$OPENWEATHER_API_KEY" make forecast NO_FETCH_HISTORY=1 LANDSCAPE=1 PORT=$(FORECAST_PORT)
+	wsh run -X -- env WEATHERAPI_KEY="$$WEATHERAPI_KEY" OPENWEATHER_API_KEY="$$OPENWEATHER_API_KEY" make forecast NO_FETCH_HISTORY=1 LANDSCAPE= PORT=$(FORECAST_PORT)
 	wsh run -X -- make clock LANDSCAPE=1 CLOCK_LANG=ja WEATHER_PROVIDER=weathernews PORT=$(CLOCK_PORT)
 
 stop:
