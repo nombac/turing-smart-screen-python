@@ -45,7 +45,7 @@ POS_BOTTOM_RIGHT = (PANEL_W * 2, PANEL_H)
 
 FONT_SIZE_LABEL = 15
 FONT_SIZE_PANEL_HEADER = 18
-FONT_SIZE_WIND_VALUE = 30
+FONT_SIZE_WIND_VALUE = 24
 FONT_SIZE_AXIS = 12
 FONT_SIZE_INFO_DATE = 16
 FONT_SIZE_INFO_TIME = 24
@@ -80,6 +80,7 @@ WIND_ARROW_HEAD_LEN = 10
 WIND_ARROW_HEAD_HALF_W = 5
 WIND_ARROW_CARDINAL_GAP = 4
 WIND_VALUE_RADIUS_RATIO = 0.6
+CURRENT_VALUE_MARGIN = 4
 
 
 def parse_brightness(value):
@@ -164,6 +165,7 @@ def draw_forecast_dots(draw, forecast_records, key, graph_x0, graph_y0, graph_w,
     )
     for x, y in points:
         draw.ellipse([(x - 1, y - 1), (x + 1, y + 1)], fill=dot_color)
+    return points
 
 
 def draw_axis_labels(draw, font_small, graph_x0, graph_y0, graph_w, graph_h, min_text, mid_text, max_text):
@@ -177,12 +179,39 @@ def draw_axis_labels(draw, font_small, graph_x0, graph_y0, graph_w, graph_h, min
     draw.text((right_x - min_width, graph_y0 + graph_h - FONT_SIZE_AXIS - 2), min_text, font=font_small, fill=COLOR_LABEL)
 
 
-def build_graph_panel_with_forecast(font_header, font_small, title, current_text, records, forecast_records, key, min_value, max_value, line_color, fill_color, reference_epoch, axis_labels=None):
+def measure_line_clearance(points, bbox):
+    left, top, right, bottom = bbox
+    clearance = math.inf
+    for (x0, y0), (x1, y1) in zip(points, points[1:]):
+        for x in range(math.ceil(max(left, x0)), math.floor(min(right, x1)) + 1):
+            y = y0 if x1 == x0 else y0 + (y1 - y0) * (x - x0) / (x1 - x0)
+            clearance = min(clearance, max(top - y, y - bottom))
+    return clearance
+
+
+def draw_current_value(draw, font_header, text, unit_text, color, points, graph_x0, graph_y0, graph_h):
+    font_value = font_header.font_variant(size=FONT_SIZE_WIND_VALUE)
+    value_x = graph_x0 + CURRENT_VALUE_MARGIN
+    unit_x = value_x + draw.textlength(text, font=font_value)
+
+    def text_bbox(y):
+        value_bbox = draw.textbbox((value_x, y), text, font=font_value, anchor="ls")
+        unit_bbox = draw.textbbox((unit_x, y), unit_text, font=font_header, anchor="ls")
+        return (value_bbox[0], min(value_bbox[1], unit_bbox[1]), unit_bbox[2], max(value_bbox[3], unit_bbox[3]))
+
+    _, text_top, _, text_bottom = text_bbox(0)
+    candidates = []
+    for y in (graph_y0 + CURRENT_VALUE_MARGIN - text_top, graph_y0 + graph_h - 1 - CURRENT_VALUE_MARGIN - text_bottom):
+        candidates.append((measure_line_clearance(points, text_bbox(y)), y))
+    _, best_y = max(candidates, key=lambda candidate: candidate[0])
+    draw.text((value_x, best_y), text, font=font_value, fill=color, anchor="ls")
+    draw.text((unit_x, best_y), unit_text, font=font_header, fill=color, anchor="ls")
+
+
+def build_graph_panel_with_forecast(font_header, font_small, title, unit_text, current_text, records, forecast_records, key, min_value, max_value, line_color, fill_color, reference_epoch, axis_labels=None):
     panel = build_panel()
     draw = ImageDraw.Draw(panel)
     draw.text((10, 8), title, font=font_header, fill=COLOR_LABEL)
-    value_width = draw.textlength(current_text, font=font_header)
-    draw.text((PANEL_W - 10 - value_width, 8), current_text, font=font_header, fill=line_color)
 
     graph_x0 = 10
     graph_y0 = 34
@@ -220,7 +249,7 @@ def build_graph_panel_with_forecast(font_header, font_small, title, current_text
         draw.polygon(fill_points, fill=fill_color)
         draw.line(past_points, fill=line_color, width=2)
 
-    draw_forecast_dots(
+    forecast_points = draw_forecast_dots(
         draw,
         forecast_records,
         key,
@@ -233,6 +262,7 @@ def build_graph_panel_with_forecast(font_header, font_small, title, current_text
         line_color,
         reference_epoch,
     )
+    draw_current_value(draw, font_header, current_text, unit_text, line_color, past_points + forecast_points, graph_x0, graph_y0, graph_h)
     return panel
 
 
@@ -241,10 +271,7 @@ def build_temp_panel(font_header, font_small, records, forecast_records, referen
     draw = ImageDraw.Draw(panel)
     current = records[-1]
 
-    current_text = format_temp(current["temp_c"])
     draw.text((10, 8), "Temp", font=font_header, fill=COLOR_LABEL)
-    value_width = draw.textlength(current_text, font=font_header)
-    draw.text((PANEL_W - 10 - value_width, 8), current_text, font=font_header, fill=COLOR_TEMP)
 
     graph_x0 = 10
     graph_y0 = 34
@@ -290,7 +317,7 @@ def build_temp_panel(font_header, font_small, records, forecast_records, referen
         COLOR_TEMP_FILL,
         reference_epoch,
     )
-    draw_forecast_dots(
+    feels_forecast_points = draw_forecast_dots(
         draw,
         forecast_records,
         "feels_like_c",
@@ -303,6 +330,7 @@ def build_temp_panel(font_header, font_small, records, forecast_records, referen
         COLOR_TEMP,
         reference_epoch,
     )
+    draw_current_value(draw, font_header, format_temp(current["temp_c"]), "°C", COLOR_TEMP, feels_points + feels_forecast_points, graph_x0, graph_y0, graph_h)
 
     return panel
 
@@ -463,19 +491,19 @@ def build_wind_panel(font_header, font_cardinal, records, forecast_records):
 
 
 def format_temp(value):
-    return f"{value:.1f}°C"
+    return f"{value:.1f}"
 
 
 def format_percent(value):
-    return f"{value:.0f}%"
+    return f"{value:.0f}"
 
 
 def format_precip(value):
-    return f"{value:.1f}mm/h"
+    return f"{value:.1f}"
 
 
 def format_pressure(value):
-    return f"{value:.0f}hPa"
+    return f"{value:.0f}"
 
 
 def get_history_file_path(provider):
@@ -823,17 +851,17 @@ def build_all_panels(font_header, font_cardinal, font_info_date, font_info_time,
             font_info_date, font_info_time, font_info_meta, reference_epoch, location, provider, icon_image
         ),
         POS_TOP_RIGHT: build_graph_panel_with_forecast(
-            font_header, font_cardinal, "Rain", format_precip(current["precip_mm"]), records, forecast_records, "precip_mm",
+            font_header, font_cardinal, "Rain", "mm/h", format_precip(current["precip_mm"]), records, forecast_records, "precip_mm",
             RAIN_MIN, RAIN_MAX, COLOR_RAIN, COLOR_RAIN_FILL, reference_epoch, axis_labels=(f"{RAIN_MIN:.0f}", f"{(RAIN_MIN + RAIN_MAX) / 2:.0f}", f"{RAIN_MAX:.0f}")
         ),
         # 気圧パネルを右下に置くと表示が崩れるため、湿度と位置を入れ替えている
         POS_BOTTOM_LEFT: build_graph_panel_with_forecast(
-            font_header, font_cardinal, "Press", format_pressure(current["pressure_hpa"]), records, forecast_records, "pressure_hpa",
+            font_header, font_cardinal, "Press", "hPa", format_pressure(current["pressure_hpa"]), records, forecast_records, "pressure_hpa",
             PRESSURE_MIN, PRESSURE_MAX, COLOR_PRESSURE, COLOR_PRESSURE_FILL, reference_epoch, axis_labels=(f"{PRESSURE_MIN:.0f}", f"{(PRESSURE_MIN + PRESSURE_MAX) / 2:.0f}", f"{PRESSURE_MAX:.0f}")
         ),
         POS_BOTTOM_MIDDLE: build_wind_panel(font_header, font_cardinal, records, forecast_records),
         POS_BOTTOM_RIGHT: build_graph_panel_with_forecast(
-            font_header, font_cardinal, "Humid", format_percent(current["humidity"]), records, forecast_records, "humidity",
+            font_header, font_cardinal, "Humid", "%", format_percent(current["humidity"]), records, forecast_records, "humidity",
             HUMIDITY_MIN, HUMIDITY_MAX, COLOR_HUMIDITY, COLOR_HUMIDITY_FILL, reference_epoch, axis_labels=(f"{HUMIDITY_MIN:.0f}", f"{(HUMIDITY_MIN + HUMIDITY_MAX) / 2:.0f}", f"{HUMIDITY_MAX:.0f}")
         ),
     }
