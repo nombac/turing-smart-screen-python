@@ -211,7 +211,7 @@ def draw_current_value(draw, font_header, text, unit_text, color, points, graph_
 def build_graph_panel_with_forecast(font_header, font_small, title, unit_text, current_text, records, forecast_records, key, min_value, max_value, line_color, fill_color, reference_epoch, axis_labels=None):
     panel = build_panel()
     draw = ImageDraw.Draw(panel)
-    draw.text((10, 8), title, font=font_header, fill=COLOR_LABEL)
+    draw.text((PANEL_W / 2, 8), title, font=font_header, fill=COLOR_LABEL, anchor="ma")
 
     graph_x0 = 10
     graph_y0 = 34
@@ -271,7 +271,7 @@ def build_temp_panel(font_header, font_small, records, forecast_records, referen
     draw = ImageDraw.Draw(panel)
     current = records[-1]
 
-    draw.text((10, 8), "Temp", font=font_header, fill=COLOR_LABEL)
+    draw.text((PANEL_W / 2, 8), "TEMP", font=font_header, fill=COLOR_LABEL, anchor="ma")
 
     graph_x0 = 10
     graph_y0 = 34
@@ -381,7 +381,7 @@ def build_wind_panel(font_header, font_cardinal, records, forecast_records):
 
     panel = build_panel()
     draw = ImageDraw.Draw(panel)
-    draw.text((10, 8), "Wind", font=font_header, fill=COLOR_LABEL)
+    draw.text((PANEL_W / 2, 8), "WIND", font=font_header, fill=COLOR_LABEL, anchor="ma")
 
     current = records[-1]
 
@@ -850,17 +850,17 @@ def build_all_panels(font_header, font_cardinal, font_info_date, font_info_time,
             font_info_date, font_info_time, font_info_meta, reference_epoch, location, provider, icon_image
         ),
         POS_TOP_RIGHT: build_graph_panel_with_forecast(
-            font_header, font_cardinal, "Rain", "mm/h", format_precip(current["precip_mm"]), records, forecast_records, "precip_mm",
+            font_header, font_cardinal, "RAIN", "mm/h", format_precip(current["precip_mm"]), records, forecast_records, "precip_mm",
             RAIN_MIN, RAIN_MAX, COLOR_RAIN, COLOR_RAIN_FILL, reference_epoch, axis_labels=(f"{RAIN_MIN:.0f}", f"{(RAIN_MIN + RAIN_MAX) / 2:.0f}", f"{RAIN_MAX:.0f}")
         ),
         # 気圧パネルを右下に置くと表示が崩れるため、湿度と位置を入れ替えている
         POS_BOTTOM_LEFT: build_graph_panel_with_forecast(
-            font_header, font_cardinal, "Press", "hPa", format_pressure(current["pressure_hpa"]), records, forecast_records, "pressure_hpa",
+            font_header, font_cardinal, "PRESS", "hPa", format_pressure(current["pressure_hpa"]), records, forecast_records, "pressure_hpa",
             PRESSURE_MIN, PRESSURE_MAX, COLOR_PRESSURE, COLOR_PRESSURE_FILL, reference_epoch, axis_labels=(f"{PRESSURE_MIN:.0f}", f"{(PRESSURE_MIN + PRESSURE_MAX) / 2:.0f}", f"{PRESSURE_MAX:.0f}")
         ),
         POS_BOTTOM_MIDDLE: build_wind_panel(font_header, font_cardinal, records, forecast_records),
         POS_BOTTOM_RIGHT: build_graph_panel_with_forecast(
-            font_header, font_cardinal, "Humid", "%", format_percent(current["humidity"]), records, forecast_records, "humidity",
+            font_header, font_cardinal, "HUMID", "%", format_percent(current["humidity"]), records, forecast_records, "humidity",
             HUMIDITY_MIN, HUMIDITY_MAX, COLOR_HUMIDITY, COLOR_HUMIDITY_FILL, reference_epoch, axis_labels=(f"{HUMIDITY_MIN:.0f}", f"{(HUMIDITY_MIN + HUMIDITY_MAX) / 2:.0f}", f"{HUMIDITY_MAX:.0f}")
         ),
     }
