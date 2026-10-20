@@ -80,7 +80,8 @@ WIND_ARROW_HEAD_LEN = 10
 WIND_ARROW_HEAD_HALF_W = 5
 WIND_ARROW_CARDINAL_GAP = 4
 WIND_VALUE_RADIUS_RATIO = 0.6
-CURRENT_VALUE_MARGIN = 4
+CURRENT_VALUE_MARGIN_X = 4
+CURRENT_VALUE_MARGIN_Y = 8
 
 
 def parse_brightness(value):
@@ -191,7 +192,7 @@ def measure_line_clearance(points, bbox):
 
 def draw_current_value(draw, font_header, text, unit_text, color, points, graph_x0, graph_y0, graph_h):
     font_value = font_header.font_variant(size=FONT_SIZE_WIND_VALUE)
-    value_x = graph_x0 + CURRENT_VALUE_MARGIN
+    value_x = graph_x0 + CURRENT_VALUE_MARGIN_X
     unit_x = value_x + draw.textlength(text, font=font_value)
 
     def text_bbox(y):
@@ -201,11 +202,14 @@ def draw_current_value(draw, font_header, text, unit_text, color, points, graph_
 
     _, text_top, _, text_bottom = text_bbox(0)
     candidates = []
-    for y in (graph_y0 + CURRENT_VALUE_MARGIN - text_top, graph_y0 + graph_h - 1 - CURRENT_VALUE_MARGIN - text_bottom):
+    for y in (graph_y0 + CURRENT_VALUE_MARGIN_Y - text_top, graph_y0 + graph_h - 1 - CURRENT_VALUE_MARGIN_Y - text_bottom):
         candidates.append((measure_line_clearance(points, text_bbox(y)), y))
     _, best_y = max(candidates, key=lambda candidate: candidate[0])
+    # macOS+Rev.Aでは文字の縁の中間色の画像データで通信が乱れることがあるため、アンチエイリアスなしで描く
+    draw.fontmode = "1"
     draw.text((value_x, best_y), text, font=font_value, fill=color, anchor="ls")
     draw.text((unit_x, best_y), unit_text, font=font_header, fill=color, anchor="ls")
+    draw.fontmode = "L"
 
 
 def build_graph_panel_with_forecast(font_header, font_small, title, unit_text, current_text, records, forecast_records, key, min_value, max_value, line_color, fill_color, reference_epoch, axis_labels=None):
@@ -925,7 +929,8 @@ def main():
     lcd.InitializeComm()
     lcd.ScreenOn()
     lcd.SetBrightness(args.brightness)
-    lcd.SetOrientation(Orientation.LANDSCAPE if args.landscape else Orientation.REVERSE_LANDSCAPE)
+    orientation = Orientation.LANDSCAPE if args.landscape else Orientation.REVERSE_LANDSCAPE
+    lcd.SetOrientation(orientation)
 
     print("Initial draw...")
     lcd.DisplayPILImage(build_canvas(lcd.get_width(), lcd.get_height()))
@@ -957,6 +962,8 @@ def main():
                     panels = build_all_panels(
                         font_header, font_axis, font_info_date, font_info_time, font_info_meta, records, forecast_records, args.location, args.weather_provider, reference_epoch
                     )
+                    # 通信のずれで画面側の向きが変わることがあるため、描画ごとに向きを送り直す
+                    lcd.SetOrientation(orientation)
                     for position in (POS_TOP_LEFT, POS_TOP_MIDDLE, POS_TOP_RIGHT, POS_BOTTOM_LEFT, POS_BOTTOM_MIDDLE, POS_BOTTOM_RIGHT):
                         lcd.DisplayPILImage(panels[position], x=position[0], y=position[1])
                         time.sleep(INITIAL_DRAW_DELAY_SEC)
@@ -972,6 +979,7 @@ def main():
                     panels = build_all_panels(
                         font_header, font_axis, font_info_date, font_info_time, font_info_meta, records, forecast_records, args.location, args.weather_provider, reference_epoch
                     )
+                    lcd.SetOrientation(orientation)
                     for position in (POS_TOP_LEFT, POS_TOP_MIDDLE, POS_TOP_RIGHT, POS_BOTTOM_LEFT, POS_BOTTOM_MIDDLE, POS_BOTTOM_RIGHT):
                         lcd.DisplayPILImage(panels[position], x=position[0], y=position[1])
                         time.sleep(INITIAL_DRAW_DELAY_SEC)
