@@ -384,9 +384,6 @@ def build_wind_panel(font_header, font_cardinal, records, forecast_records):
     draw.text((10, 8), "Wind", font=font_header, fill=COLOR_LABEL)
 
     current = records[-1]
-    unit_text = "m/s"
-    unit_width = draw.textlength(unit_text, font=font_header)
-    draw.text((PANEL_W - 10 - unit_width, 8), unit_text, font=font_header, fill=COLOR_WIND_LATEST)
 
     graph_x0 = 10
     graph_y0 = 34
@@ -479,13 +476,15 @@ def build_wind_panel(font_header, font_cardinal, records, forecast_records):
     latest_rad = math.radians(float(visible_records[-1]["wind_dir_deg"]))
     font_wind_value = font_header.font_variant(size=FONT_SIZE_WIND_VALUE)
     value_radius = radius * WIND_VALUE_RADIUS_RATIO
-    draw.text(
-        (center_x - value_radius * math.sin(latest_rad), center_y - value_radius * math.cos(latest_rad)),
-        f"{current['wind_speed_mps']:.1f}",
-        font=font_wind_value,
-        fill=COLOR_WIND_LATEST,
-        anchor="mm",
-    )
+    value_text = f"{current['wind_speed_mps']:.1f}"
+    unit_text = "m/s"
+    value_width = draw.textlength(value_text, font=font_wind_value)
+    unit_width = draw.textlength(unit_text, font=font_header)
+    _, value_top, _, value_bottom = draw.textbbox((0, 0), value_text, font=font_wind_value, anchor="ls")
+    value_x = center_x - value_radius * math.sin(latest_rad) - (value_width + unit_width) / 2
+    baseline_y = center_y - value_radius * math.cos(latest_rad) - (value_top + value_bottom) / 2
+    draw.text((value_x, baseline_y), value_text, font=font_wind_value, fill=COLOR_WIND_LATEST, anchor="ls")
+    draw.text((value_x + value_width, baseline_y), unit_text, font=font_header, fill=COLOR_WIND_LATEST, anchor="ls")
 
     return panel
 
