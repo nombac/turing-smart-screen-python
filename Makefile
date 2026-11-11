@@ -81,7 +81,7 @@ start:
 	$(check_forecast_port)
 	wsh run -X -- env WEATHERAPI_KEY="$$WEATHERAPI_KEY" OPENWEATHER_API_KEY="$$OPENWEATHER_API_KEY" make history
 	$(start_forecast)
-	wsh run -X -- make clock LANDSCAPE=1 CLOCK_LANG=ja WEATHER_PROVIDER=weathernews PORT=$(CLOCK_PORT)
+	wsh run -X -- make clock CLOCK_LANG=ja WEATHER_PROVIDER=weathernews PORT=$(CLOCK_PORT)
 
 stop:
 	pkill -f '$(WEATHER_PROCESS_PATTERN)'
